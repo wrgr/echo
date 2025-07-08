@@ -92,9 +92,9 @@ const callGeminiWithRetries = (options, postData, retries = 3) => {
 const ENCOUNTER_PHASES = {
   0: { // Special introductory phase, not scored directly.
     name: 'Introduction & Initial Presentation',
-    // Dynamic intro message based on patient data.
+    // Dynamic intro message based on patient data - simplified for new start.
     coachIntro: (patient) =>
-      `Welcome to SUSAN! You're about to meet **${patient.name}**, a **${patient.age}**-year-old **${patient.genderIdentity}** (${patient.pronouns}) whose primary language is **${patient.nativeLanguage}** (${patient.englishProficiency} English proficiency). Their main complaint is: "${patient.mainComplaint}". Your goal is to conduct a complete clinical encounter adhering to the Patient-Centered / Biopsychosocial model. Let's begin with **Phase 1: Initiation and Building the Relationship**. What is your first step?"`,
+      `Welcome to SUSAN! You are about to meet ${patient.name}.`,
     phaseGoalDescription: 'This is the initial introduction to the scenario. There are no direct tasks for the provider in this phase other than to transition into Phase 1.',
     maxTurns: 0, // No turns in this intro phase.
   },
@@ -268,7 +268,7 @@ async function getPhaseScoreFromGemini(patientState, conversationHistory, phaseN
  */
 async function getOverallFeedbackFromGemini(patientState, phaseScores, conversationHistory) {
   const feedbackPrompt = `
-        You are an expert medical educator providing comprehensive final feedback for a provider's performance in a clinical encounter simulation.
+        You are SUSAN, an expert medical educator providing comprehensive final feedback for a provider's performance in a clinical encounter simulation.
         The simulation followed the Patient-Centered / Biopsychosocial model across several phases.
 
         Your response should be a well-structured text summary, highlighting:
@@ -356,6 +356,21 @@ async function getGeminiResponseForInteraction(
             'The patient\'s information may become slightly less direct or require more probing.' :
             'The patient should remain cooperative and provide information clearly and accurately based on their profile.'));
 
+  // --- NEW: Interpreter/English Proficiency Logic ---
+  let languageInstruction = '';
+  const interpreterRequested = latestInput.toLowerCase().includes('interpreter') || latestInput.toLowerCase().includes('translator');
+  const patientNeedsInterpreter = patientState.englishProficiency === 'None' || patientState.englishProficiency === 'Beginner';
+
+  if (interpreterRequested && patientNeedsInterpreter) {
+    languageInstruction = 'An interpreter is now present. The patient will now speak clearly and directly, mimicking good English communication as if translated. Do not explicitly state that an interpreter has arrived in the patient\'s response unless the provider is asking for confirmation directly. Instead, just change the patient\'s communication style to fluent English. ';
+  } else if (patientNeedsInterpreter) {
+    languageInstruction = `The patient's English proficiency is "${patientState.englishProficiency}". Their responses should mimic this level, possibly using broken English, simple sentences, or incorporating words from their native language (${patientState.nativeLanguage}). They will struggle with complex medical terms. `;
+  } else {
+    languageInstruction = 'The patient has good English proficiency and will respond clearly. ';
+  }
+  // --- END NEW Language Logic ---
+
+
   const geminiPrompt = `
         You are SUSAN, a clinical communication simulator.
         Your primary role is to act as the **patient** based on the provided 'Patient Profile' and 'Current Encounter Phase'.
@@ -385,10 +400,14 @@ async function getGeminiResponseForInteraction(
         ${fidelityInstruction}
         ---
 
-        **YOUR TASK:**
-        Based on the 'PROVIDER'S LATEST INPUT', the 'CURRENT ENCOUNTER PHASE', the 'PATIENT PROFILE', the 'CONVERSATION HISTORY', and the 'FIDELITY INSTRUCTION':
+        **LANGUAGE PROFICIENCY AND INTERPRETER INSTRUCTION:**
+        ${languageInstruction}
+        ---
 
-        1.  **Patient Response:** Generate the patient's natural, realistic response to the provider's \`latestInput\`. The patient's response should be consistent with their persona, language proficiency, illness, and the fidelity instruction.
+        **YOUR TASK:**
+        Based on the 'PROVIDER'S LATEST INPUT', the 'CURRENT ENCOUNTER PHASE', the 'PATIENT PROFILE', the 'CONVERSATION HISTORY', the 'FIDELITY INSTRUCTION', and the 'LANGUAGE PROFICIENCY AND INTERPRETER INSTRUCTION':
+
+        1.  **Patient Response:** Generate the patient's natural, realistic response to the provider's \`latestInput\`. The patient's response should be consistent with their persona, language proficiency (as per instruction), illness, and the fidelity instruction.
             * If the provider asks a clinical question, the patient responds naturally.
             * If the provider asks for an interpreter for a 'None' or 'Beginner' English proficiency patient, the **coach** should confirm the interpreter's arrival (see point 4).
             * If the patient has a 'secondaryComplaint' or 'hiddenConcern', only reveal it if the provider asks appropriate, probing questions.
@@ -560,7 +579,7 @@ async function generateInjectedProviderResponse(
  */
 async function getHelpAdviceFromGemini(patientInfo, providerPerception, question) {
   const prompt = `
-    You are SUSAN, an expert medical educator and communication coach.
+    You are SUSAN, an expert medical educator and communication coach, with a deep background in serving LEP patients.
     A healthcare provider is asking for advice on a specific clinical communication scenario.
     Provide actionable, empathetic, and culturally sensitive advice. Focus on principles of patient-centered care and communication with LEP patients.
 
@@ -620,41 +639,95 @@ async function getHelpAdviceFromGemini(patientInfo, providerPerception, question
  */
 async function handleGeneratePatient(res) {
   try {
-    // In a real scenario, you'd call Gemini here to generate a new patient profile
-    // based on certain parameters or a prompt.
-    // For this example, we'll use a hardcoded placeholder patient for simplicity.
-    const patientData = {
-      'name': 'Maria Garcia',
-      'age': 62,
-      'genderIdentity': 'Female',
-      'pronouns': 'she/her',
-      'nativeLanguage': 'Spanish',
-      'englishProficiency': 'Limited',
-      'culturalBackground': 'Maria is from a rural part of Mexico, values family input in health decisions, and prefers natural remedies alongside modern medicine.',
-      'mainComplaint': 'Me duele mucho la rodilla derecha y me cuesta caminar. (My right knee hurts a lot and it\'s hard for me to walk.)',
-      'secondaryComplaint': 'I also feel more tired than usual.',
-      'hiddenConcern': 'Worried about becoming a burden to her children.',
-      'illnessPerception_Ideas': 'I think it\'s just old age, or maybe the cold weather.',
-      'illnessPerception_Concerns': 'I\'m worried I won\'t be able to do my daily chores or play with my grandchildren.',
-      'illnessPerception_Expectations': 'I hope there\'s some kind of cream or simple medicine to make it feel better.',
-      'relevantPastMedicalHistory': 'Osteoarthritis in both knees, diagnosed 10 years ago. Hypertension, well-controlled with medication.',
-      'relevantMedicationsAndAllergies': 'Lisinopril daily for blood pressure. Takes over-the-counter pain relievers occasionally. No known allergies.',
-      'relevantFamilyHistory': 'Mother had severe arthritis. Father had heart disease.',
-      'relevantSocialHistory': 'Lives with her daughter and grandchildren. Enjoys gardening. Was a homemaker.',
-      'physicalExamFindings': 'Right knee swollen and tender to palpation. Crepitus on range of motion. Limited flexion and extension. No redness or warmth.',
-      'correctDiagnosis': 'Osteoarthritis flare-up of the right knee',
-      'managementPlanOutline': 'Pain management, physical therapy referral, consider joint injection, discuss weight management.',
-      'redFlags_worseningConditions': 'The pain is now constant, even at rest, and my knee feels hot.',
-      'familyInvolvementPreference': 'High',
-      'patientPersona': 'Resigned but hopeful',
+    const patientGenerationPrompt = `
+      You are an expert medical scenario designer for a clinical communication simulator.
+      Your task is to generate a diverse and realistic patient profile for a simulated clinical encounter.
+      The patient should have a main complaint and potentially a secondary complaint or hidden concern.
+      Crucially, the patient *must* have a native language other than English and an English proficiency level that is NOT "Fluent". This is to ensure the simulation focuses on Limited English Proficiency (LEP) communication.
+
+      Your entire response MUST be a single, valid JSON object and nothing else.
+      Do not wrap it in markdown.
+
+      Generate a JSON object with the following structure and diverse values:
+
+      \`\`\`json
+      {
+        "name": "string (realistic name)",
+        "age": "number (e.g., 20-80)",
+        "genderIdentity": "string (e.g., 'Female', 'Male', 'Non-binary')",
+        "pronouns": "string (e.g., 'she/her', 'he/him', 'they/them')",
+        "nativeLanguage": "string (e.g., 'Spanish', 'Mandarin', 'Arabic', 'Vietnamese', 'Haitian Creole', 'Tagalog')",
+        "englishProficiency": "string (MUST be one of: 'None', 'Beginner', 'Intermediate', 'Advanced' - DO NOT USE 'Fluent')",
+        "culturalBackground": "string (brief description of relevant cultural aspects, e.g., 'prefers family involvement in health decisions', 'may use traditional remedies')",
+        "mainComplaint": "string (chief complaint, ideally with a brief native language translation if relevant)",
+        "secondaryComplaint": "string (optional, a less prominent complaint)",
+        "hiddenConcern": "string (optional, a concern the patient may not reveal unless asked probing questions, e.g., 'worried about losing job due to illness')",
+        "illnessPerception_Ideas": "string (patient's belief about cause of illness)",
+        "illnessPerception_Concerns": "string (patient's worries related to illness)",
+        "illnessPerception_Expectations": "string (what patient hopes for from the visit)",
+        "relevantPastMedicalHistory": "string (brief relevant history)",
+        "relevantMedicationsAndAllergies": "string (brief relevant meds/allergies)",
+        "relevantFamilyHistory": "string (brief relevant family history)",
+        "relevantSocialHistory": "string (brief relevant social history)",
+        "physicalExamFindings": "string (brief relevant findings, e.g., 'Right knee swollen and tender')",
+        "correctDiagnosis": "string (medical diagnosis)",
+        "managementPlanOutline": "string (brief outline of plan, e.g., 'Pain management, physical therapy referral')",
+        "redFlags_worseningConditions": "string (optional, subtle hints of worsening if provider performs poorly)",
+        "familyInvolvementPreference": "string (e.g., 'High', 'Medium', 'Low')",
+        "patientPersona": "string (e.g., 'Anxious but cooperative', 'Resigned but hopeful', 'Skeptical')"
+      }
+      \`\`\`
+      Ensure variety across generated patients, especially in main complaints, native languages, and proficiency levels.
+    `;
+
+    const postData = JSON.stringify({
+      'contents': [{'parts': [{'text': patientGenerationPrompt}]}],
+      'generationConfig': {
+        'temperature': 0.9, // Higher temperature for more diverse and creative patient generation
+        'topK': 40,
+        'topP': 0.95,
+      },
+    });
+
+    const options = {
+      hostname: 'generativelanguage.googleapis.com',
+      path: `/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(postData),
+      },
     };
+
+    const rawData = await callGeminiWithRetries(options, postData);
+    const geminiResponse = JSON.parse(rawData);
+    const responseText = geminiResponse.candidates[0].content.parts[0].text;
+    const cleanResponseText = responseText.replace(/^```json\s*|\s*```$/gs, '');
+    const patientData = JSON.parse(cleanResponseText);
+
+    // Basic validation to ensure the generated patient data has essential fields
+    const requiredPatientFields = ['name', 'age', 'nativeLanguage', 'englishProficiency', 'mainComplaint'];
+    const allFieldsPresent = requiredPatientFields.every(field => patientData[field] !== undefined && patientData[field] !== null);
+
+    if (!allFieldsPresent) {
+      console.warn('Gemini returned incomplete patient data. Falling back to default or error.');
+      throw new Error('Generated patient data is incomplete.');
+    }
+
+    // Ensure English proficiency is NOT "Fluent"
+    if (patientData.englishProficiency === 'Fluent') {
+      console.warn('Generated patient with "Fluent" English proficiency. Regenerating or adjusting.');
+      // In a real app, you might re-call Gemini or set to 'Advanced'
+      patientData.englishProficiency = 'Advanced';
+    }
+
 
     res.status(200).json({
       message: 'Patient generated successfully.',
       patient: patientData,
       initialCoachMessage: ENCOUNTER_PHASES[0].coachIntro(patientData),
       initialEncounterState: {
-        currentPhase: 0, // Start at intro phase on the server.
+        currentPhase: 1, // Start at phase 1 on the server
         providerTurnCount: 0,
         phaseScores: {},
         currentCumulativeScore: 0,
@@ -735,11 +808,12 @@ async function handleInteraction(req, res) {
         justificationForCompletion = geminiRegularResponse.phaseAssessment.justificationForCompletion;
 
         // Update cumulative scores based on the current turn's score.
+        // This is only for the turn's score, not the full phase score yet.
         for (const category in scoreUpdate) {
-          // Ensure the property belongs to the object itself, not its prototype chain.
           if (Object.hasOwnProperty.call(scoreUpdate, category)) {
-            currentCumulativeScore += scoreUpdate[category].points;
-            totalPossibleScore += PHASE_RUBRIC[category].max;
+            // No direct modification of currentCumulativeScore or totalPossibleScore here based on turn score,
+            // as this is handled by the full phase score calculation when a phase completes.
+            // The turn score is simply returned for client-side display if needed.
           }
         }
 
@@ -812,12 +886,9 @@ async function handleInteraction(req, res) {
         // AND the patient's reaction turn (from patientReactionData).
         // For simplicity, `scoreUpdate` sent back will be the patient's reaction score.
         // The cumulative score will reflect both.
-        for (const category in scoreUpdate) {
-          if (Object.hasOwnProperty.call(scoreUpdate, category)) {
-            currentCumulativeScore += scoreUpdate[category].points;
-            totalPossibleScore += PHASE_RUBRIC[category].max;
-          }
-        }
+        // No direct modification of currentCumulativeScore or totalPossibleScore here based on turn score,
+        // as this is handled by the full phase score calculation when a phase completes.
+        // The turn score is simply returned for client-side display if needed.
 
         // Check for auto-advance after patient's reaction to injected response.
         if (!phaseComplete && currentPhaseConfig.maxTurns > 0 && providerTurnCount >= currentPhaseConfig.maxTurns) {
@@ -871,12 +942,17 @@ async function handleInteraction(req, res) {
       phaseScores = {...phaseScores, [completedPhaseName]: fullPhaseScore};
 
       // Sum up points from the just-completed phase's full score to add to cumulative total.
-      for (const category in fullPhaseScore) {
-        if (Object.hasOwnProperty.call(fullPhaseScore, category)) {
-          currentCumulativeScore += (fullPhaseScore[category]?.points || 0);
-          totalPossibleScore += (PHASE_RUBRIC[category]?.max || 0);
+      currentCumulativeScore = 0; // Reset cumulative and recalculate from phaseScores
+      totalPossibleScore = 0;
+      Object.values(phaseScores).forEach(pScore => {
+        for (const category in pScore) {
+          if (Object.hasOwnProperty.call(pScore, category)) {
+            currentCumulativeScore += (pScore[category]?.points || 0);
+            totalPossibleScore += (PHASE_RUBRIC[category]?.max || 0);
+          }
         }
-      }
+      });
+
 
       // Move to the next phase for the *next* interaction.
       nextPhase = currentPhase + 1;
@@ -890,7 +966,7 @@ async function handleInteraction(req, res) {
         if (nextPhaseConfig.coachIntro) {
           nextCoachMessage = nextPhaseConfig.coachIntro(patientState);
         } else if (nextPhaseConfig.coachPrompt) {
-          nextCoachMessage = `COACH: Transitioning to **Phase ${nextPhase}: ${nextPhaseConfig.name}**. ${nextPhaseConfig.coachPrompt}`;
+          nextCoachMessage = `COACH: Entering Phase ${nextPhase}: ${nextPhaseConfig.name}.`; // More succinct intro
         }
       }
 
