@@ -1,60 +1,65 @@
-// Firebase Cloud Functions for the SUSAN Clinical Communication Simulator.
-// This file handles all backend logic, including:
-// - Interacting with the Gemini API for patient responses, scoring, and feedback.
-// - Managing the state of the clinical encounter (phases, turns, scores).
-// - Providing helper functions for API calls with retry logic.
+// Node.js standard imports
+const https = require('https');
+const { Buffer } = require('buffer');
+const admin = require('firebase-admin');
 
-const {onRequest} = require('firebase-functions/v2/https');
-const {setGlobalOptions} = require('firebase-functions/v2');
-const https = require('https'); // Node.js built-in HTTPS module for API calls
+// Firebase Functions SDK imports
+const { onRequest } = require('firebase-functions/v2/https');
+const { setGlobalOptions } = require('firebase-functions/v2');
+// Import defineSecret and defineString from 'firebase-functions/v2/params'
+const { defineSecret } = require('firebase-functions/params'); // <--- THIS IS THE CHANGE
 
-// Retrieve the Gemini API key from environment variables.
-// IMPORTANT: This variable must be set in your Firebase project configuration
-// using `firebase functions:config:set susan.gemini_api_key="YOUR_API_KEY"`
-// or directly in the Firebase console.
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+// Third-party middleware
+const cors = require('cors')({ origin: true });
 
-// Set global options for all Firebase functions in this file.
-// 'us-central1' is a common region for Firebase functions.
-setGlobalOptions({region: 'us-central1'});
+// --- Firebase Admin SDK Initialization ---
+admin.initializeApp();
 
-/**
- * Helper function for making HTTP API calls with retry logic.
- * This is used to interact with the Gemini API, providing resilience against
- * transient network issues or API rate limits.
- *
- * @param {object} options - HTTP request options (e.g., hostname, path, method, headers).
- * @param {string} postData - The data to send in the request body (JSON stringified).
- * @param {number} [retries=3] - The number of retry attempts if the request fails (default is 3).
- * @return {Promise<string>} A promise that resolves with the response data as a string.
- * @throws {Error} If the API request fails after all retries.
- */
-const callGeminiWithRetries = (options, postData, retries = 3) => {
-  return new Promise((resolve, reject) => {
-    // Inner function to handle individual API attempts.
+// --- Global Options for all v2 Functions ---
+setGlobalOptions({ region: 'us-central1' });
+
+// --- Define the Secret for Gemini API Key ---
+// This tells Firebase that your function needs access to a secret named 'GEMINI_API_KEY'.
+// The name here MUST match the name of the secret in Google Cloud Secret Manager.
+const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY');
+
+// --- Helper function for the API call with retries ---
+// This function will now accept the secret object and extract its value when used.
+// --- Helper function for the API call with retries ---
+// Make the outer function `async`
+const callGeminiWithRetries = async (geminiApiSecret, options, postData, retries = 3) => {
+  // Await the secret value here, outside the Promise constructor
+  const apiKey = await geminiApiSecret.value();
+
+  // Construct the full path with the API key
+  const fullPath = `${options.path}?key=${apiKey}`;
+
+  return new Promise((resolve, reject) => { // Executor is NO LONGER async
     const attempt = (tryCount) => {
-      // Create an HTTPS request.
-      const apiReq = https.request(options, (apiRes) => {
+      // Create request options with the key appended to the path
+      const reqOptions = {
+        hostname: options.hostname,
+        path: fullPath, // Use the fullPath which already includes the API key
+        method: options.method,
+        headers: options.headers,
+      };
+
+      const apiReq = https.request(reqOptions, (apiRes) => {
         let data = '';
-        // Accumulate data chunks from the response.
         apiRes.on('data', (chunk) => {
           data += chunk;
         });
-        // When the response ends, process the data.
         apiRes.on('end', () => {
-          // Check for successful HTTP status codes (2xx).
           if (apiRes.statusCode >= 200 && apiRes.statusCode < 300) {
-            resolve(data); // Resolve the promise with the successful data.
+            resolve(data);
           } else {
-            // If it's a server error (5xx) and retries are left, retry.
+            console.error(`API request failed with status ${apiRes.statusCode}: ${data}`);
             if (apiRes.statusCode >= 500 && tryCount > 1) {
               console.log(
                 `Attempt ${retries - tryCount + 1} failed with status ${apiRes.statusCode}, retrying...`,
               );
-              // Wait 1 second before retrying to avoid overwhelming the API.
               setTimeout(() => attempt(tryCount - 1), 1000);
             } else {
-              // If it's a client error (4xx) or no retries left, reject.
               reject(
                 new Error(
                   `API request failed with status ${apiRes.statusCode}: ${data}`,
@@ -65,85 +70,81 @@ const callGeminiWithRetries = (options, postData, retries = 3) => {
         });
       });
 
-      // Handle network errors during the request.
       apiReq.on('error', (e) => {
+        console.error(`API request network error: ${e.message}`);
         if (tryCount > 1) {
           console.log(
             `Attempt ${tryCount - 1} failed due to network error, retrying...`,
           );
           setTimeout(() => attempt(tryCount - 1), 1000);
         } else {
-          reject(e); // No retries left, reject with the error.
+          reject(e);
         }
       });
 
-      // Write the request body and end the request.
       apiReq.write(postData);
       apiReq.end();
     };
 
-    attempt(retries); // Start the first attempt.
+    attempt(retries); // Start the first attempt
   });
 };
 
-// --- Encounter Phases Configuration ---
-// Defines the structure and goals for each phase of the clinical encounter.
-// Each phase has a name, description, and maximum turns before auto-advancing.
-const ENCOUNTER_PHASES = {
-  0: { // Special introductory phase, not scored directly.
+// --- Encounter Phases Configuration (No change) ---
+const ENCOUNTER_PHASES = { /* ... your ENCOUNTER_PHASES object ... */
+  0: { // Special introductory phase, not scored directly
     name: 'Introduction & Initial Presentation',
-    // Dynamic intro message based on patient data - simplified for new start.
     coachIntro: (patient) =>
-      `Welcome to SUSAN! You are about to meet ${patient.name}.`,
+      `Welcome to ECHO! You are entering a patient room, where you will meet ${patient.name}, a ${patient.age}-year-old ${patient.genderIdentity} (${patient.pronouns}) whose primary language is ${patient.nativeLanguage} (${patient.englishProficiency} English proficiency). Their main complaint is: "${patient.mainComplaint}". Your goal is to conduct a complete clinical encounter with cultural humility and shared understanding. Entering Phase 1: Initiation and Building the Relationship. What is your first step?"`,
     phaseGoalDescription: 'This is the initial introduction to the scenario. There are no direct tasks for the provider in this phase other than to transition into Phase 1.',
-    maxTurns: 0, // No turns in this intro phase.
+    maxTurns: 0, // No turns in this intro phase
   },
   1: {
     name: 'Initiation & Building the Relationship',
-    coachIntro: null, // Intro handled by Phase 0's nextPhaseIntro.
+    coachIntro: null, // Intro handled by Phase 0's nextPhaseIntro
     coachPrompt: 'You are in Phase 1 (Initiation & Relationship). Focus on greeting the patient, introducing yourself, establishing rapport, and clearly identifying the patient\'s chief complaint and agenda for the visit.',
     phaseGoalDescription: 'The provider should greet the patient, introduce themselves, establish initial rapport, and identify the patient\'s chief complaint and their agenda for the visit. Key actions include: open-ended questions about their visit, empathetic statements, and active listening.',
-    maxTurns: 5, // Auto-advance after 5 provider turns (10 total messages).
+    maxTurns: 10, // Auto-advance after 5 provider turns (10 total messages)
   },
   2: {
     name: 'Information Gathering & History Taking',
     coachIntro: null,
     coachPrompt: 'You are in Phase 2 (Information Gathering). Focus on a comprehensive History of Present Illness (HPI), and relevant Past Medical, Social, Family History. Critically, explore the patient\'s Ideas, Concerns, and Expectations.',
-    phaseGoalDescription: 'The provider should gather a comprehensive History of Present Illness (HPI) including OLDCARTS elements, and inquire about relevant Past Medical History, Medications/Allergies, Family History, and Social History. It is crucial to explore the patient\'s Ideas, Concerns, and Expectations (ICE). The provider should use a mix of open-ended and focused questions, and demonstrate active listening.',
-    maxTurns: 7, // Auto-advance after 10 provider turns (20 total messages).
+    phaseGoalDescription: 'The provider should gather a comprehensive History of Present Illness and inquire about relevant Past Medical History, Medications/Allergies, Family History, and Social History. It is crucial to explore the patient\'s Ideas, Concerns, and Expectations. The provider should use a mix of open-ended and focused questions, and demonstrate active listening.',
+    maxTurns: 10, // Auto-advance after 10 provider turns (20 total messages)
   },
   3: {
     name: 'Physical Examination',
     coachIntro: null,
     coachPrompt: 'You are in Phase 3 (Physical Examination). Clearly state what exam components you are performing. Remember to explain what you\'re doing and ask for consent. The patient will then state the findings.',
     phaseGoalDescription: 'The provider should clearly state the intention to perform a physical exam, explain what will be done, and ask for consent. They should then state specific, focused components of the physical exam relevant to the patient\'s complaint. The patient will then provide relevant findings.',
-    maxTurns: 3, // Auto-advance after 3 provider turns (6 total messages).
+    maxTurns: 7, // Auto-advance after 3 provider turns (6 total messages)
   },
   4: {
     name: 'Assessment & Plan / Shared Decision-Making',
     coachIntro: null,
-    coachPrompt: 'You are in Phase 4 (Assessment & Plan). Your goal is to synthesize findings, state a diagnosis, propose a management plan, and ensure shared understanding with the patient. Use the \'teach-back\' method.',
-    phaseGoalDescription: 'The provider should synthesize the gathered subjective and objective data, formulate and communicate a likely diagnosis to the patient, propose a management plan (tests, treatments, referrals), and engage in shared decision-making. Critically, the provider must use techniques like \'teach-back\' to ensure the patient\'s understanding and address their preferences and concerns.',
-    maxTurns: 7, // Auto-advance after 7 provider turns (14 total messages).
+    coachPrompt: 'You are in Phase 4 (Assessment & Plan). Your goal is to synthesize findings, state a diagnosis, propose a management plan, and ensure shared understanding with the patient. Use the teach-back method.',
+    phaseGoalDescription: 'The provider should synthesize the gathered subjective and objective data, formulate and communicate a likely diagnosis to the patient, propose a management plan (tests, treatments, referrals), and engage in shared decision-making. Critically, the provider must use techniques like teach-back to ensure the patient\'s understanding and address their preferences and concerns.',
+    maxTurns: 7, // Auto-advance after 7 provider turns (14 total messages)
   },
   5: {
     name: 'Closure',
     coachIntro: null,
     coachPrompt: 'You are in Phase 5 (Closure). Summarize the agreed-upon plan, provide safety netting instructions (what to do if symptoms worsen), and address any final questions the patient may have.',
     phaseGoalDescription: 'The provider should provide a concise summary of the encounter and the agreed-upon plan, give clear safety-netting instructions (what to do, when to seek help), invite any final questions or concerns from the patient, and professionally close the encounter.',
-    maxTurns: 3, // Auto-advance after 3 provider turns (6 total messages).
+    maxTurns: 3, // Auto-advance after 3 provider turns (6 total messages)
   },
-  6: { // Final phase, for displaying final score.
+  6: { // Final phase, for displaying final score
     name: 'Encounter Complete',
     coachIntro: null,
     coachPrompt: 'The encounter is complete.',
     phaseGoalDescription: 'The simulation has ended. Review the total score and detailed feedback.',
-    maxTurns: 0, // No turns in this final phase.
+    maxTurns: 0, // No turns in this final phase
   },
 };
 
-// Rubric for scoring each phase.
-// Each category has a maximum score and a description.
+
+// Rubric for scoring each phase (No change)
 const PHASE_RUBRIC = {
   communication: {max: 1, desc: 'Clear, active listening, appropriate language. Asks clear questions, summarizes effectively.'},
   trustRapport: {max: 1, desc: 'Establishes empathetic connection, shows respect, builds trust, manages emotions.'},
@@ -152,62 +153,52 @@ const PHASE_RUBRIC = {
   sharedUnderstanding: {max: 1, desc: 'Ensures patient comprehension of information/plan, actively involves patient in decisions, uses teach-back.'},
 };
 
-/**
- * Gets a comprehensive score for a completed phase from Gemini.
- * This function constructs a detailed prompt for Gemini, including patient state,
- * conversation history, and the scoring rubric, then parses Gemini's JSON response.
- *
- * @param {object} patientState - The current patient's state.
- * @param {Array<object>} conversationHistory - The full conversation history up to this point.
- * @param {string} phaseName - The name of the phase to score.
- * @param {string} phaseDescription - The goal description of the phase.
- * @return {Promise<object>} A promise that resolves with the phase score object.
- * Returns a default score object if Gemini's response is incomplete or an error occurs.
- */
-async function getPhaseScoreFromGemini(patientState, conversationHistory, phaseName, phaseDescription) {
+
+// Helper function to get a score for a completed phase from Gemini
+async function getPhaseScoreFromGemini(geminiApiSecret, patientState, conversationHistory, phaseName, phaseDescription) {
   const scorePrompt = `
-        You are an expert medical educator evaluating a provider's performance in a clinical encounter simulation.
-        Your task is to provide a comprehensive score for the entire phase provided.
+    You are an expert medical educator evaluating a provider's performance in a clinical encounter simulation.
+    Your task is to provide a comprehensive score for the entire phase provided.
 
-        Your entire response MUST be a single, valid JSON object and nothing else.
-        Do not wrap it in markdown.
+    Your entire response MUST be a single, valid JSON object and nothing else.
+    Do not wrap it in markdown.
 
-        ---
-        **PHASE TO SCORE: ${phaseName}**
-        **PHASE GOAL:** ${phaseDescription}
-        ---
+    ---
+    **PHASE TO SCORE: ${phaseName}**
+    **PHASE GOAL:** ${phaseDescription}
+    ---
 
-        **RUBRIC FOR SCORING THIS PHASE (Max 1 point per category):**
-        ${Object.entries(PHASE_RUBRIC).map(([key, value]) => `- ${key} (${value.max} pt): ${value.desc}`).join('\n')}
+    **RUBRIC FOR SCORING THIS PHASE (Max 1 point per category):**
+    ${Object.entries(PHASE_RUBRIC).map(([key, value]) => `- ${key} (${value.max} pt): ${value.desc}`).join('\n')}
 
-        ---
-        **PATIENT PROFILE:**
-        ${JSON.stringify(patientState, null, 2)}
-        ---
+    ---
+    **PATIENT PROFILE:**
+    ${JSON.stringify(patientState, null, 2)}
+    ---
 
-        **CONVERSATION HISTORY (All turns within the encounter so far, relevant to this phase):**
-        ${JSON.stringify(conversationHistory, null, 2)}
-        ---
+    **CONVERSATION HISTORY (All turns within the encounter so far, relevant to this phase):**
+    ${JSON.stringify(conversationHistory, null, 2)}
+    ---
 
-        **YOUR TASK:**
-        Based on the 'PHASE TO SCORE', its 'PHASE GOAL', the 'RUBRIC FOR SCORING THIS PHASE', and the 'CONVERSATION HISTORY':
+    **YOUR TASK:**
+    Based on the 'PHASE TO SCORE', its 'PHASE GOAL', the 'RUBRIC FOR SCORING THIS PHASE', and the 'CONVERSATION HISTORY':
 
-        1.  Evaluate the provider's overall performance during the *entire duration* of this specific phase.
-        2.  Award points (0 or 1) for each category in the RUBRIC for this phase's *overall performance*.
-        3.  Provide a brief, specific \`justification\` for the points awarded or not awarded in each category, referencing actions (or inactions) from the conversation history.
+    1.  Evaluate the provider's overall performance during the *entire duration* of this specific phase.
+    2.  Award points (0 or 1) for each category in the RUBRIC for this phase's *overall performance*.
+    3.  Provide a brief, specific \`justification\` for the points awarded or not awarded in each category, referencing actions (or inactions) from the conversation history.
 
-        4.  Response Format: Your output MUST be a JSON object with the following keys:
+    4.  Response Format: Your output MUST be a JSON object with the following keys:
 
-            \`\`\`json
-            {
-              "communication": { "points": 0 | 1, "justification": "string" },
-              "trustRapport": { "points": 0 | 1, "justification": "string" },
-              "accuracy": { "points": 0 | 1, "justification": "string" },
-              "culturalHumility": { "points": 0 | 1, "justification": "string" },
-              "sharedUnderstanding": { "points": 0 | 1, "justification": "string" }
-            }
-            \`\`\`
-    `;
+        \`\`\`json
+        {
+          "communication": { "points": 0 | 1, "justification": "string" },
+          "trustRapport": { "points": 0 | 1, "justification": "string" },
+          "accuracy": { "points": 0 | 1, "justification": "string" },
+          "culturalHumility": { "points": 0 | 1, "justification": "string" },
+          "sharedUnderstanding": { "points": 0 | 1, "justification": "string" }
+        }
+        \`\`\`
+  `;
 
   const postData = JSON.stringify({
     'contents': [{'parts': [{'text': scorePrompt}]}],
@@ -215,7 +206,7 @@ async function getPhaseScoreFromGemini(patientState, conversationHistory, phaseN
 
   const options = {
     hostname: 'generativelanguage.googleapis.com',
-    path: `/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+    path: '/v1beta/models/gemini-2.0-flash:generateContent',
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -224,15 +215,12 @@ async function getPhaseScoreFromGemini(patientState, conversationHistory, phaseN
   };
 
   try {
-    const rawData = await callGeminiWithRetries(options, postData);
+    const rawData = await callGeminiWithRetries(geminiApiSecret, options, postData);
     const geminiResponse = JSON.parse(rawData);
-    // Extract the text content from Gemini's response.
     const responseText = geminiResponse.candidates[0].content.parts[0].text;
-    // Clean any markdown fences that Gemini might erroneously include.
     const cleanResponseText = responseText.replace(/^```json\s*|\s*```$/gs, '');
     const parsedScore = JSON.parse(cleanResponseText);
 
-    // Basic validation to ensure the score structure is as expected.
     const requiredCategories = Object.keys(PHASE_RUBRIC);
     const allCategoriesPresent = requiredCategories.every((cat) => parsedScore[cat] && typeof parsedScore[cat].points === 'number');
 
@@ -256,53 +244,57 @@ async function getPhaseScoreFromGemini(patientState, conversationHistory, phaseN
   }
 }
 
+// Helper function to generate a new patient profile from Gemini
 /**
- * Gets overall feedback from Gemini at the end of the encounter.
- * This function provides a holistic summary of the provider's performance
- * across all phases, based on aggregated scores and the full conversation history.
- *
- * @param {object} patientState - The final patient state.
- * @param {object} phaseScores - The aggregated scores for all phases.
- * @param {Array<object>} conversationHistory - The full conversation history.
- * @return {Promise<string>} A promise that resolves with the overall feedback text.
+ * Generates a new patient profile from Gemini.
+ * @param {Secret} geminiApiSecret - The Gemini API key secret object.
+ * @return {Promise<object>} A promise that resolves with the generated patient profile.
  */
-async function getOverallFeedbackFromGemini(patientState, phaseScores, conversationHistory) {
-  const feedbackPrompt = `
-        You are SUSAN, an expert medical educator providing comprehensive final feedback for a provider's performance in a clinical encounter simulation.
-        The simulation followed the Patient-Centered / Biopsychosocial model across several phases.
+async function generatePatientFromGemini(geminiApiSecret) {
+  const patientGenerationPrompt = `
+    You are a medical simulation AI. Your task is to generate a detailed, realistic patient profile for a clinical encounter simulation. The patient should be a unique individual with specific characteristics and an accurate medical complaint. Ensure the patient's characteristics are diverse (e.g., varying age, gender identity, native language, English proficiency, cultural background, and type of complaint).
 
-        Your response should be a well-structured text summary, highlighting:
-        - Overall strengths demonstrated by the provider throughout the encounter.
-        - Key areas for improvement, with specific examples from the conversation if possible.
-        - How well the provider integrated patient-centered care and cultural humility.
-        - A general assessment of the provider's clinical communication and reasoning.
+    Your entire response MUST be a single, valid JSON object and nothing else. Do not wrap it in markdown or add any additional text.
 
-        Do not use markdown fences (like \`\`\`json\`). Just return plain text.
-
-        ---
-        **PATIENT PROFILE:**
-        ${JSON.stringify(patientState, null, 2)}
-        ---
-
-        **PHASE-BY-PHASE SCORES (Including justifications):**
-        ${JSON.stringify(phaseScores, null, 2)}
-        ---
-
-        **FULL CONVERSATION TRANSCRIPT:**
-        ${JSON.stringify(conversationHistory, null, 2)}
-        ---
-
-        **YOUR TASK:**
-        Synthesize all the provided information to generate a holistic summary of the provider's performance. Focus on constructive feedback for learning. Start with an encouraging tone.
-    `;
+    Response Format:
+    {
+      "name": "string",
+      "age": number,
+      "genderIdentity": "string (e.g., 'Male', 'Female', 'Non-binary')",
+      "pronouns": "string (e.g., 'he/him', 'she/her', 'they/them')",
+      "nativeLanguage": "string (e.g., 'Spanish', 'Somali', 'Mandarin', 'Vietnamese', 'Arabic', 'Russian')",
+      "englishProficiency": "string ('None', 'Beginner', 'Limited', 'Fluent')",
+      "culturalBackground": "string (brief description of cultural values relevant to healthcare, e.g., 'values family input', 'prefers traditional healing', 'may be hesitant to disclose')",
+      "mainComplaint": "string (patient's chief complaint in their native language if not fluent, with English translation in parentheses if applicable)",
+      "secondaryComplaint": "string (optional, a less prominent complaint)",
+      "hiddenConcern": "string (an underlying worry the patient has but might not immediately state, e.g., 'worried about cancer', 'financial burden')",
+      "illnessPerception_Ideas": "string (patient's ideas about what's causing their illness)",
+      "illnessPerception_Concerns": "string (patient's worries/fears about their illness)",
+      "illnessPerception_Expectations": "string (patient's expectations for diagnosis, treatment, and outcome)",
+      "relevantPastMedicalHistory": "string (brief, relevant past medical history, e.g., 'Type 2 Diabetes', 'Asthma')",
+      "relevantMedicationsAndAllergies": "string (brief, relevant medications and known allergies)",
+      "relevantFamilyHistory": "string (brief, relevant family history, e.g., 'Mother had heart disease')",
+      "relevantSocialHistory": "string (brief, relevant social history, lifestyle, living situation, occupation)",
+      "physicalExamFindings": "string (brief, realistic physical exam findings relevant to main complaint)",
+      "correctDiagnosis": "string (the most likely medical diagnosis)",
+      "managementPlanOutline": "string (brief outline of management steps: tests, treatments, referrals)",
+      "redFlags_worseningConditions": "string (what signs/symptoms would indicate a worsening condition that warrants immediate attention)",
+      "familyInvolvementPreference": "string ('High', 'Medium', 'Low')",
+      "patientPersona": "string (brief description of their general demeanor/attitude, e.g., 'anxious but cooperative', 'stoic', 'demanding')"
+    }
+  `;
 
   const postData = JSON.stringify({
-    'contents': [{'parts': [{'text': feedbackPrompt}]}],
+    'contents': [{'parts': [{'text': patientGenerationPrompt}]}],
+    'generationConfig': {
+      'temperature': 0.9, // Adjust temperature for variability (0.0 to 1.0)
+      'maxOutputTokens': 1500, // Ensure enough tokens for a full profile
+    },
   });
 
   const options = {
     hostname: 'generativelanguage.googleapis.com',
-    path: `/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+    path: '/v1beta/models/gemini-2.0-flash:generateContent',
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -311,35 +303,91 @@ async function getOverallFeedbackFromGemini(patientState, phaseScores, conversat
   };
 
   try {
-    const rawData = await callGeminiWithRetries(options, postData);
+    const rawData = await callGeminiWithRetries(geminiApiSecret, options, postData);
+    const geminiResponse = JSON.parse(rawData);
+    if (!geminiResponse || !geminiResponse.candidates || !geminiResponse.candidates[0] ||
+        !geminiResponse.candidates[0].content || !geminiResponse.candidates[0].content.parts ||
+        !geminiResponse.candidates[0].content.parts[0] || !geminiResponse.candidates[0].content.parts[0].text) {
+      console.error('Gemini did not return text content for patient generation:', JSON.stringify(geminiResponse, null, 2));
+      throw new Error('Gemini response missing expected content for patient generation.');
+    }
+    const responseText = geminiResponse.candidates[0].content.parts[0].text;
+
+    const cleanResponseText = responseText.replace(/^```json\s*|\s*```$/gs, '');
+    const patientProfile = JSON.parse(cleanResponseText);
+
+    if (!patientProfile || !patientProfile.name || !patientProfile.mainComplaint) {
+      console.warn('Generated patient profile is incomplete:', patientProfile);
+      throw new Error('Generated patient profile is incomplete or malformed.');
+    }
+
+    return patientProfile;
+  } catch (error) {
+    console.error('Error generating patient from Gemini:', error.message);
+    throw new Error('Failed to generate patient from Gemini: ' + error.message);
+  }
+}
+// Helper function to get overall feedback from Gemini at the end of the encounter
+async function getOverallFeedbackFromGemini(geminiApiSecret, patientState, phaseScores, conversationHistory) {
+  const feedbackPrompt = `
+    You are an expert medical educator providing comprehensive final feedback for a provider's performance in a clinical encounter simulation.
+    The simulation followed the Patient-Centered / Biopsychosocial model across several phases.
+
+    Your response should be a well-structured text summary, highlighting:
+    - Overall strengths demonstrated by the provider throughout the encounter.
+    - Key areas for improvement, with specific examples from the conversation if possible.
+    - How well the provider integrated patient-centered care and cultural humility.
+    - A general assessment of the provider's clinical communication and reasoning.
+
+    Do not use markdown fences (like \`\`\`json\`). Just return plain text.
+
+    ---
+    **PATIENT PROFILE:**
+    ${JSON.stringify(patientState, null, 2)}
+    ---
+
+    **PHASE-BY-PHASE SCORES (Including justifications):**
+    ${JSON.stringify(phaseScores, null, 2)}
+    ---
+
+    **FULL CONVERSATION TRANSCRIPT:**
+    ${JSON.stringify(conversationHistory, null, 2)}
+    ---
+
+    **YOUR TASK:**
+    Synthesize all the provided information to generate a holistic summary of the provider's performance. Focus on constructive feedback for learning. Start with an encouraging tone.
+  `;
+
+  const postData = JSON.stringify({
+    'contents': [{'parts': [{'text': feedbackPrompt}]}],
+  });
+
+  const options = {
+    hostname: 'generativelanguage.googleapis.com',
+    path: '/v1beta/models/gemini-2.0-flash:generateContent',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(postData),
+    },
+  };
+
+  try {
+    const rawData = await callGeminiWithRetries(geminiApiSecret, options, postData);
     const geminiResponse = JSON.parse(rawData);
     const responseText = geminiResponse.candidates[0].content.parts[0].text;
-    // Clean any markdown fences, just in case, though plain text is expected.
     const cleanResponseText = responseText.replace(/^```(?:json|text)?\s*|\s*```$/gs, '');
-    return cleanResponseText; // Expecting plain text response.
+    return cleanResponseText;
   } catch (error) {
     console.error('Error getting overall feedback from Gemini:', error.message);
     return 'An error occurred while generating overall feedback. Please check server logs.';
   }
 }
 
-/**
- * Gets Gemini's response for a regular interaction (patient response or coach intervention).
- * This is the core function for driving the simulation's turn-by-turn interaction.
- * It determines the patient's response, assesses phase progression, and scores the provider's turn.
- *
- * @param {object} patientState - The current patient's state.
- * @param {Array<object>} formattedHistoryForGemini - Conversation history formatted for Gemini.
- * @param {string} latestInput - The provider's latest input.
- * @param {object} encounterState - The current encounter state.
- * @param {number} currentPhase - The current phase number.
- * @param {object} phaseConfig - The configuration for the current phase.
- * @param {number} currentPerformanceRatio - The provider's current performance ratio for fidelity.
- * @return {Promise<object>} A promise that resolves with Gemini's parsed response,
- * including simulator response, source ('patient'/'coach'),
- * phase assessment, and score update for the turn.
- */
+
+// Helper function to get Gemini's response for a regular interaction
 async function getGeminiResponseForInteraction(
+  geminiApiSecret,
   patientState,
   formattedHistoryForGemini,
   latestInput,
@@ -348,104 +396,83 @@ async function getGeminiResponseForInteraction(
   phaseConfig,
   currentPerformanceRatio,
 ) {
-  // Adjust patient's cooperativeness/clarity based on provider's cumulative performance.
   const fidelityInstruction = `Provider performance has been ${(currentPerformanceRatio * 100).toFixed(0)}% score so far. ` +
-        (currentPerformanceRatio < 0.5 ?
-          'The patient\'s provided information should now be less clear, more vague, or occasionally contradictory. Do not explicitly state this, but subtly withhold or muddle information.' :
-          (currentPerformanceRatio < 0.75 ?
-            'The patient\'s information may become slightly less direct or require more probing.' :
-            'The patient should remain cooperative and provide information clearly and accurately based on their profile.'));
-
-  // --- NEW: Interpreter/English Proficiency Logic ---
-  let languageInstruction = '';
-  const interpreterRequested = latestInput.toLowerCase().includes('interpreter') || latestInput.toLowerCase().includes('translator');
-  const patientNeedsInterpreter = patientState.englishProficiency === 'None' || patientState.englishProficiency === 'Beginner';
-
-  if (interpreterRequested && patientNeedsInterpreter) {
-    languageInstruction = 'An interpreter is now present. The patient will now speak clearly and directly, mimicking good English communication as if translated. Do not explicitly state that an interpreter has arrived in the patient\'s response unless the provider is asking for confirmation directly. Instead, just change the patient\'s communication style to fluent English. ';
-  } else if (patientNeedsInterpreter) {
-    languageInstruction = `The patient's English proficiency is "${patientState.englishProficiency}". Their responses should mimic this level, possibly using broken English, simple sentences, or incorporating words from their native language (${patientState.nativeLanguage}). They will struggle with complex medical terms. `;
-  } else {
-    languageInstruction = 'The patient has good English proficiency and will respond clearly. ';
-  }
-  // --- END NEW Language Logic ---
-
+    (currentPerformanceRatio < 0.5 ?
+      'The patient\'s provided information should now be less clear, more vague, or occasionally contradictory. Do not explicitly state this, but subtly withhold or muddle information.' :
+      (currentPerformanceRatio < 0.75 ?
+        'The patient\'s information may become slightly less direct or require more probing.' :
+        'The patient should remain cooperative and provide information clearly and accurately based on their profile.'));
 
   const geminiPrompt = `
-        You are SUSAN, a clinical communication simulator.
-        Your primary role is to act as the **patient** based on the provided 'Patient Profile' and 'Current Encounter Phase'.
-        You will also act as the **coach** to provide feedback and facilitate phase progression.
+    You are ECHO, a clinical communication simulator.
+    Your primary role is to act as the **patient** based on the provided 'Patient Profile' and 'Current Encounter Phase'.
+    You will also act as the **coach** to provide feedback and facilitate phase progression.
 
-        Your entire response MUST be a single, valid JSON object.
-        Do not wrap it in markdown.
+    Your entire response MUST be a single, valid JSON object and nothing else.
+    Do not wrap it in markdown.
 
-        ---
-        **CURRENT ENCOUNTER PHASE: ${phaseConfig.name} (Phase ${currentPhase})**
-        **GOAL FOR THIS PHASE:** ${phaseConfig.phaseGoalDescription}
-        ---
+    ---
+    **CURRENT ENCOUNTER PHASE: ${phaseConfig.name} (Phase ${currentPhase})**
+    **GOAL FOR THIS PHASE:** ${phaseConfig.phaseGoalDescription}
+    ---
 
-        **RUBRIC FOR SCORING (For your evaluation of the provider's *performance in THIS TURN*):**
-        ${Object.entries(PHASE_RUBRIC).map(([key, value]) => `- ${key} (${value.max} pt): ${value.desc}`).join('\n')}
+    **RUBRIC FOR SCORING (For your evaluation of the provider's *performance in THIS TURN*):**
+    ${Object.entries(PHASE_RUBRIC).map(([key, value]) => `- ${key} (${value.max} pt): ${value.desc}`).join('\n')}
 
-        ---
-        **PATIENT PROFILE:**
-        ${JSON.stringify(patientState, null, 2)}
-        ---
+    ---
+    **PATIENT PROFILE:**
+    ${JSON.stringify(patientState, null, 2)}
+    ---
 
-        **CONVERSATION HISTORY (All previous turns, including current provider's turn):**
-        ${JSON.stringify(formattedHistoryForGemini, null, 2)}
-        ---
+    **CONVERSATION HISTORY (All previous turns, including current provider's turn):**
+    ${JSON.stringify(formattedHistoryForGemini, null, 2)}
+    ---
 
-        **FIDELITY INSTRUCTION (Based on provider's cumulative performance):**
-        ${fidelityInstruction}
-        ---
+    **FIDELITY INSTRUCTION (Based on provider's cumulative performance):**
+    ${fidelityInstruction}
+    ---
 
-        **LANGUAGE PROFICIENCY AND INTERPRETER INSTRUCTION:**
-        ${languageInstruction}
-        ---
+    **YOUR TASK:**
+    Based on the 'PROVIDER'S LATEST INPUT', the 'CURRENT ENCOUNTER PHASE', the 'PATIENT PROFILE', the 'CONVERSATION HISTORY', and the 'FIDELITY INSTRUCTION':
 
-        **YOUR TASK:**
-        Based on the 'PROVIDER'S LATEST INPUT', the 'CURRENT ENCOUNTER PHASE', the 'PATIENT PROFILE', the 'CONVERSATION HISTORY', the 'FIDELITY INSTRUCTION', and the 'LANGUAGE PROFICIENCY AND INTERPRETER INSTRUCTION':
+    1.  **Patient Response:** Generate the patient's natural, realistic response to the provider's \`latestInput\`. The patient's response should be consistent with their persona, language proficiency, illness, and the fidelity instruction.
+        * If the provider asks a clinical question, the patient responds naturally.
+        * If the provider asks for an interpreter for a 'None' or 'Beginner' English proficiency patient, the **coach** should confirm the interpreter's arrival (see point 4).
+        * If the patient has a 'secondaryComplaint' or 'hiddenConcern', only reveal it if the provider asks appropriate, probing questions.
+        * If the patient has \`redFlags_worseningConditions\` and the provider's actions are poor or critical signs are missed (as determined by your internal logic for this turn's context), consider subtly introducing hints of this.
 
-        1.  **Patient Response:** Generate the patient's natural, realistic response to the provider's \`latestInput\`. The patient's response should be consistent with their persona, language proficiency (as per instruction), illness, and the fidelity instruction.
-            * If the provider asks a clinical question, the patient responds naturally.
-            * If the provider asks for an interpreter for a 'None' or 'Beginner' English proficiency patient, the **coach** should confirm the interpreter's arrival (see point 4).
-            * If the patient has a 'secondaryComplaint' or 'hiddenConcern', only reveal it if the provider asks appropriate, probing questions.
-            * If the patient has \`redFlags_worseningConditions\` and the provider's actions are poor or critical signs are missed (as determined by your internal logic for this turn's context), consider subtly introducing hints of this.
+    2.  **Phase Progression Assessment:** Evaluate the provider's overall performance *within the current phase* up to and including the latest input.
+        * Determine if the \`GOAL FOR THIS PHASE\` has been adequately met.
+        * Set \`phaseComplete\` to \`true\` if the goals are met, \`false\` otherwise. Provide a \`justificationForCompletion\`.
 
-        2.  **Phase Progression Assessment:** Evaluate the provider's overall performance *within the current phase* up to and including the latest input.
-            * Determine if the \`GOAL FOR THIS PHASE\` has been adequately met.
-            * Set \`phaseComplete\` to \`true\` if the goals are met, \`false\` otherwise. Provide a \`justificationForCompletion\`.
+    3.  **Scoring for Current Turn:** Evaluate the \`PROVIDER'S LATEST INPUT\` against the \`RUBRIC FOR SCORING\`. Award 0 or 1 point for each category. Provide a brief, specific \`justification\` for each point awarded or not awarded.
 
-        3.  **Scoring for Current Turn:** Evaluate the \`PROVIDER'S LATEST INPUT\` against the \`RUBRIC FOR SCORING\`. Award 0 or 1 point for each category. Provide a brief, specific \`justification\` for each point awarded or not awarded.
+    4.  **Response Type Determination (\`from\` field):**
+        * Default to \`"patient"\` for the \`simulatorResponse\`.
+        * **Switch to \`"coach"\` IF:**
+            * The provider asks for an interpreter and the patient's \`englishProficiency\` is "None" or "Beginner". \`simulatorResponse\` should confirm interpreter.
+            * The provider's \`latestInput\` is nonsensical, irrelevant to a medical conversation, or gibberish. \`simulatorResponse\` should be a helpful coaching tip.
 
-        4.  **Response Type Determination (\`from\` field):**
-            * Default to \`"patient"\` for the \`simulatorResponse\`.
-            * **Switch to \`"coach"\` IF:**
-                * The provider asks for an interpreter and the patient's \`englishProficiency\` is "None" or "Beginner". \`simulatorResponse\` should confirm interpreter.
-                * The provider's \`latestInput\` is nonsensical, irrelevant to a medical conversation, or gibberish. \`simulatorResponse\` should be a helpful coaching tip.
-                * (Optional: You can add more coach intervention triggers here based on critical mistakes like rudeness, major ethical ethical breach etc. - the simulator should *always* intervene as coach for these.)
+    5.  **Response Format:** Your output MUST be a JSON object with the following keys:
 
-        5.  **Response Format:** Your output MUST be a JSON object with the following keys:
-
-            \`\`\`json
-            {
-              "from": "patient" | "coach", // MANDATORY: indicates who the response is from
-              "simulatorResponse": "string", // The message from the patient OR coach
-              "phaseAssessment": {
-                "phaseComplete": boolean, // true if phase goals are met
-                "justificationForCompletion": "string" // Explanation for phase completion status
-              },
-              "scoreUpdate": { // Score for the CURRENT TURN'S interaction
-                "communication": { "points": 0 | 1, "justification": "string" },
-                "trustRapport": { "points": 0 | 1, "justification": "string" },
-                "accuracy": { "points": 0 | 1, "justification": "string" },
-                "culturalHumility": { "points": 0 | 1, "justification": "string" },
-                "sharedUnderstanding": { "points": 0 | 1, "justification": "string" }
-              }
-            }
-            \`\`\`
-    `;
+        \`\`\`json
+        {
+          "from": "patient" | "coach", // MANDATORY: indicates who the response is from
+          "simulatorResponse": "string", // The message from the patient OR coach
+          "phaseAssessment": {
+            "phaseComplete": boolean, // true if phase goals are met
+            "justificationForCompletion": "string" // Explanation for phase completion status
+          },
+          "scoreUpdate": { // Score for the CURRENT TURN'S interaction
+            "communication": { "points": 0 | 1, "justification": "string" },
+            "trustRapport": { "points": 0 | 1, "justification": "string" },
+            "accuracy": { "points": 0 | 1, "justification": "string" },
+            "culturalHumility": { "points": 0 | 1, "justification": "string" },
+            "sharedUnderstanding": { "points": 0 | 1, "justification": "string" }
+          }
+        }
+        \`\`\`
+  `;
 
   const postData = JSON.stringify({
     'contents': [{'parts': [{'text': geminiPrompt}]}],
@@ -453,7 +480,7 @@ async function getGeminiResponseForInteraction(
 
   const options = {
     hostname: 'generativelanguage.googleapis.com',
-    path: `/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+    path: '/v1beta/models/gemini-2.0-flash:generateContent',
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -462,7 +489,7 @@ async function getGeminiResponseForInteraction(
   };
 
   try {
-    const rawData = await callGeminiWithRetries(options, postData);
+    const rawData = await callGeminiWithRetries(geminiApiSecret, options, postData);
     const geminiResponse = JSON.parse(rawData);
     const responseText = geminiResponse.candidates[0].content.parts[0].text;
     const cleanResponseText = responseText.replace(/^```json\s*|\s*```$/gs, '');
@@ -474,20 +501,10 @@ async function getGeminiResponseForInteraction(
   }
 }
 
-/**
- * Generates an AI-driven "good" or "poor" provider response and its score.
- * This function is used for injecting pre-defined quality responses into the simulation
- * for demonstration or specific training scenarios.
- *
- * @param {object} patientState - The current patient's state.
- * @param {Array<object>} conversationHistory - The full conversation history.
- * @param {number} currentPhase - The current phase number.
- * @param {string} phaseName - The name of the current phase.
- * @param {string} phaseGoalDescription - The goal description of the current phase.
- * @param {"good"|"poor"} responseType - The type of response to generate ('good' or 'poor').
- * @return {Promise<object>} A promise that resolves with the generated response text and its score.
- */
+
+// Helper function to generate an injected provider response (good/poor)
 async function generateInjectedProviderResponse(
+  geminiApiSecret,
   patientState,
   conversationHistory,
   currentPhase,
@@ -496,49 +513,49 @@ async function generateInjectedProviderResponse(
   responseType,
 ) {
   const prompt = `
-        You are SUSAN, a clinical communication simulator.
-        Your task is to generate a **provider's response** that is either "${responseType}" or "poor" for the current clinical encounter context.
-        You must also provide a score for this generated provider response based on the rubric.
+    You are ECHO, a clinical communication simulator.
+    Your task is to generate a **provider's response** that is either "${responseType}" or "poor" for the current clinical encounter context.
+    You must also provide a score for this generated provider response based on the rubric.
 
-        Your entire response MUST be a single, valid JSON object.
-        Do not wrap it in markdown.
+    Your entire response MUST be a single, valid JSON object and nothing else.
+    Do not wrap it in markdown.
 
-        ---
-        **CURRENT ENCOUNTER PHASE: ${phaseName} (Phase ${currentPhase})**
-        **GOAL FOR THIS PHASE:** ${phaseGoalDescription}
-        ---
+    ---
+    **CURRENT ENCOUNTER PHASE: ${phaseName} (Phase ${currentPhase})**
+    **GOAL FOR THIS PHASE:** ${phaseGoalDescription}
+    ---
 
-        **RUBRIC FOR SCORING THIS PROVIDER RESPONSE (Max 1 point per category):**
-        ${Object.entries(PHASE_RUBRIC).map(([key, value]) => `- ${key} (${value.max} pt): ${value.desc}`).join('\n')}
+    **RUBRIC FOR SCORING THIS PROVIDER RESPONSE (Max 1 point per category):**
+    ${Object.entries(PHASE_RUBRIC).map(([key, value]) => `- ${key} (${value.max} pt): ${value.desc}`).join('\n')}
 
-        ---
-        **PATIENT PROFILE:**
-        ${JSON.stringify(patientState, null, 2)}
-        ---
+    ---
+    **PATIENT PROFILE:**
+    ${JSON.stringify(patientState, null, 2)}
+    ---
 
-        **CONVERSATION HISTORY (All previous turns):**
-        ${JSON.stringify(conversationHistory, null, 2)}
-        ---
+    **CONVERSATION HISTORY (All previous turns):**
+    ${JSON.stringify(conversationHistory, null, 2)}
+    ---
 
-        **YOUR TASK:**
-        Generate a concise, realistic provider response that exemplifies a "${responseType}" interaction in this phase.
-        Then, score this generated provider response against the rubric.
+    **YOUR TASK:**
+    Generate a concise, realistic provider response that exemplifies a "${responseType}" interaction in this phase.
+    Then, score this generated provider response against the rubric.
 
-        Response Format: Your output MUST be a JSON object with the following keys:
+    Response Format: Your output MUST be a JSON object with the following keys:
 
-        \`\`\`json
-        {
-          "text": "string", // The generated provider response
-          "scoreUpdate": { // Score for this generated provider response
-            "communication": { "points": 0 | 1, "justification": "string" },
-            "trustRapport": { "points": 0 | 1, "justification": "string" },
-            "accuracy": { "points": 0 | 1, "justification": "string" },
-            "culturalHumility": { "points": 0 | 1, "justification": "string" },
-            "sharedUnderstanding": { "points": 0 | 1, "justification": "string" }
-          }
-        }
-        \`\`\`
-    `;
+    \`\`\`json
+    {
+      "text": "string", // The generated provider response
+      "scoreUpdate": { // Score for this generated provider response
+        "communication": { "points": 0 | 1, "justification": "string" },
+        "trustRapport": { "points": 0 | 1, "justification": "string" },
+        "accuracy": { "points": 0 | 1, "justification": "string" },
+        "culturalHumility": { "points": 0 | 1, "justification": "string" },
+        "sharedUnderstanding": { "points": 0 | 1, "justification": "string" }
+      }
+    }
+    \`\`\`
+  `;
 
   const postData = JSON.stringify({
     'contents': [{'parts': [{'text': prompt}]}],
@@ -546,7 +563,7 @@ async function generateInjectedProviderResponse(
 
   const options = {
     hostname: 'generativelanguage.googleapis.com',
-    path: `/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+    path: '/v1beta/models/gemini-2.0-flash:generateContent',
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -555,7 +572,7 @@ async function generateInjectedProviderResponse(
   };
 
   try {
-    const rawData = await callGeminiWithRetries(options, postData);
+    const rawData = await callGeminiWithRetries(geminiApiSecret, options, postData);
     const geminiResponse = JSON.parse(rawData);
     const responseText = geminiResponse.candidates[0].content.parts[0].text;
     const cleanResponseText = responseText.replace(/^```json\s*|\s*```$/gs, '');
@@ -567,19 +584,11 @@ async function generateInjectedProviderResponse(
   }
 }
 
-/**
- * Gets free-form advice from Gemini based on a provider's query.
- * This function allows the provider to ask for general guidance or tips
- * from the SUSAN coach at any point in the simulation.
- *
- * @param {string} patientInfo - Description of the patient.
- * @param {string} providerPerception - Provider's perception of the interaction.
- * @param {string} question - The specific question for SUSAN.
- * @return {Promise<string>} A promise that resolves with Gemini's advice text.
- */
-async function getHelpAdviceFromGemini(patientInfo, providerPerception, question) {
+
+// Helper function for the new Help/Advice functionality
+async function getHelpAdviceFromGemini(geminiApiSecret, patientInfo, providerPerception, question) {
   const prompt = `
-    You are SUSAN, an expert medical educator and communication coach, with a deep background in serving LEP patients.
+    You are ECHO, an expert medical educator and communication coach.
     A healthcare provider is asking for advice on a specific clinical communication scenario.
     Provide actionable, empathetic, and culturally sensitive advice. Focus on principles of patient-centered care and communication with LEP patients.
 
@@ -607,7 +616,7 @@ async function getHelpAdviceFromGemini(patientInfo, providerPerception, question
 
   const options = {
     hostname: 'generativelanguage.googleapis.com',
-    path: `/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+    path: '/v1beta/models/gemini-2.0-flash:generateContent',
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -616,7 +625,7 @@ async function getHelpAdviceFromGemini(patientInfo, providerPerception, question
   };
 
   try {
-    const rawData = await callGeminiWithRetries(options, postData);
+    const rawData = await callGeminiWithRetries(geminiApiSecret, options, postData);
     const geminiResponse = JSON.parse(rawData);
     const responseText = geminiResponse.candidates[0].content.parts[0].text;
     const cleanResponseText = responseText.replace(/^```(?:json|text)?\s*|\s*```$/gs, '');
@@ -627,107 +636,27 @@ async function getHelpAdviceFromGemini(patientInfo, providerPerception, question
   }
 }
 
+
 // --- Handler Functions for Firebase HTTP Triggers ---
-// These functions orchestrate the calls to Gemini and manage the simulation state on the backend.
 
 /**
  * Handles generating a new patient profile.
- * This function is typically called at the start of a new simulation.
- * It returns initial patient data and the starting encounter state.
- *
- * @param {object} res - The Express response object to send the response.
+ * @param {object} req - The Express request object.
+ * @param {object} res - The Express response object.
+ * @param {Secret} geminiApiSecret - The Gemini API key secret object.
  */
-async function handleGeneratePatient(res) {
+async function handleGeneratePatient(req, res, geminiApiSecret) {
   try {
-    const patientGenerationPrompt = `
-      You are an expert medical scenario designer for a clinical communication simulator.
-      Your task is to generate a diverse and realistic patient profile for a simulated clinical encounter.
-      The patient should have a main complaint and potentially a secondary complaint or hidden concern.
-      Crucially, the patient *must* have a native language other than English and an English proficiency level that is NOT "Fluent". This is to ensure the simulation focuses on Limited English Proficiency (LEP) communication.
-
-      Your entire response MUST be a single, valid JSON object and nothing else.
-      Do not wrap it in markdown.
-
-      Generate a JSON object with the following structure and diverse values:
-
-      \`\`\`json
-      {
-        "name": "string (realistic name)",
-        "age": "number (e.g., 20-80)",
-        "genderIdentity": "string (e.g., 'Female', 'Male', 'Non-binary')",
-        "pronouns": "string (e.g., 'she/her', 'he/him', 'they/them')",
-        "nativeLanguage": "string (e.g., 'Spanish', 'Mandarin', 'Arabic', 'Vietnamese', 'Haitian Creole', 'Tagalog')",
-        "englishProficiency": "string (MUST be one of: 'None', 'Beginner', 'Intermediate', 'Advanced' - DO NOT USE 'Fluent')",
-        "culturalBackground": "string (brief description of relevant cultural aspects, e.g., 'prefers family involvement in health decisions', 'may use traditional remedies')",
-        "mainComplaint": "string (chief complaint, ideally with a brief native language translation if relevant)",
-        "secondaryComplaint": "string (optional, a less prominent complaint)",
-        "hiddenConcern": "string (optional, a concern the patient may not reveal unless asked probing questions, e.g., 'worried about losing job due to illness')",
-        "illnessPerception_Ideas": "string (patient's belief about cause of illness)",
-        "illnessPerception_Concerns": "string (patient's worries related to illness)",
-        "illnessPerception_Expectations": "string (what patient hopes for from the visit)",
-        "relevantPastMedicalHistory": "string (brief relevant history)",
-        "relevantMedicationsAndAllergies": "string (brief relevant meds/allergies)",
-        "relevantFamilyHistory": "string (brief relevant family history)",
-        "relevantSocialHistory": "string (brief relevant social history)",
-        "physicalExamFindings": "string (brief relevant findings, e.g., 'Right knee swollen and tender')",
-        "correctDiagnosis": "string (medical diagnosis)",
-        "managementPlanOutline": "string (brief outline of plan, e.g., 'Pain management, physical therapy referral')",
-        "redFlags_worseningConditions": "string (optional, subtle hints of worsening if provider performs poorly)",
-        "familyInvolvementPreference": "string (e.g., 'High', 'Medium', 'Low')",
-        "patientPersona": "string (e.g., 'Anxious but cooperative', 'Resigned but hopeful', 'Skeptical')"
-      }
-      \`\`\`
-      Ensure variety across generated patients, especially in main complaints, native languages, and proficiency levels.
-    `;
-
-    const postData = JSON.stringify({
-      'contents': [{'parts': [{'text': patientGenerationPrompt}]}],
-      'generationConfig': {
-        'temperature': 0.9, // Higher temperature for more diverse and creative patient generation
-        'topK': 40,
-        'topP': 0.95,
-      },
-    });
-
-    const options = {
-      hostname: 'generativelanguage.googleapis.com',
-      path: `/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(postData),
-      },
-    };
-
-    const rawData = await callGeminiWithRetries(options, postData);
-    const geminiResponse = JSON.parse(rawData);
-    const responseText = geminiResponse.candidates[0].content.parts[0].text;
-    const cleanResponseText = responseText.replace(/^```json\s*|\s*```$/gs, '');
-    const patientData = JSON.parse(cleanResponseText);
-
-    // Basic validation to ensure the generated patient data has essential fields
-    const requiredPatientFields = ['name', 'age', 'nativeLanguage', 'englishProficiency', 'mainComplaint'];
-    const allFieldsPresent = requiredPatientFields.every(field => patientData[field] !== undefined && patientData[field] !== null);
-
-    if (!allFieldsPresent) {
-      console.warn('Gemini returned incomplete patient data. Falling back to default or error.');
-      throw new Error('Generated patient data is incomplete.');
-    }
-
-    // Ensure English proficiency is NOT "Fluent"
-    if (patientData.englishProficiency === 'Fluent') {
-      console.warn('Generated patient with "Fluent" English proficiency. Regenerating or adjusting.');
-      // In a real app, you might re-call Gemini or set to 'Advanced'
-      patientData.englishProficiency = 'Advanced';
-    }
-
+    // Call the new helper function to generate a patient using Gemini
+    const patientData = await generatePatientFromGemini(geminiApiSecret); 
+    
 
     res.status(200).json({
       message: 'Patient generated successfully.',
       patient: patientData,
       initialCoachMessage: ENCOUNTER_PHASES[0].coachIntro(patientData),
       initialEncounterState: {
-        currentPhase: 1, // Start at phase 1 on the server
+        currentPhase: 0,
         providerTurnCount: 0,
         phaseScores: {},
         currentCumulativeScore: 0,
@@ -742,57 +671,48 @@ async function handleGeneratePatient(res) {
 }
 
 /**
- * Handles all types of simulation interactions. This is the main endpoint
- * for turn-by-turn communication in the simulation. It processes provider input,
- * gets Gemini's response (patient or coach), updates scores, and manages phase transitions.
- *
+ * Handles all types of simulation interactions (regular messages, tips, phase changes, injected responses).
  * @param {object} req - The Express request object containing interaction details.
- * @param {object} res - The Express response object to send the response.
+ * @param {object} res - The Express response object.
+ * @param {Secret} geminiApiSecret - The Gemini API key secret object.
  */
-async function handleInteraction(req, res) {
+async function handleInteraction(req, res, geminiApiSecret) {
   try {
     const {actionType, patientState, conversationHistory, latestInput, encounterState} = req.body;
 
-    // Validate required input data.
     if (!patientState || !conversationHistory || !encounterState) {
       return res.status(400).send('Missing required interaction data (patientState, conversationHistory, encounterState).');
     }
 
-    // Destructure and initialize encounter state variables.
     let {currentPhase, providerTurnCount, phaseScores, currentCumulativeScore, totalPossibleScore} = encounterState;
     let currentPhaseConfig = ENCOUNTER_PHASES[currentPhase];
     let simulatorResponse = '';
-    let from = 'coach'; // Default response source.
-    let scoreUpdate = {}; // Score for the current turn/interaction.
+    let from = 'coach';
+    let scoreUpdate = {};
     let phaseComplete = false;
     let justificationForCompletion = '';
     let nextCoachMessage = null;
     let overallFeedback = null;
-    let injectedProviderResponseText = null; // For the 'inject_provider_response' case.
+    let injectedProviderResponseText = null;
 
-    // Calculate current performance ratio for fidelity adjustment.
     const performanceRatio = totalPossibleScore > 0 ? currentCumulativeScore / totalPossibleScore : 1;
-
-    // Create a mutable copy of conversation history for immediate updates within this function's scope.
     const updatedConversationHistory = [...conversationHistory];
 
-    // Handle different types of interaction actions.
     switch (actionType) {
       case 'regular_interaction': {
-        // If the encounter is already in the final phase, return a completion message.
         if (currentPhase >= Object.keys(ENCOUNTER_PHASES).length - 1) {
-          simulatorResponse = ENCOUNTER_PHASES[6].coachPrompt; // "Encounter complete."
+          simulatorResponse = ENCOUNTER_PHASES[6].coachPrompt;
           from = 'coach';
-          break; // Exit switch and send response.
+          break;
         }
 
-        providerTurnCount++; // Increment turn count for the current phase.
-        currentPhaseConfig = ENCOUNTER_PHASES[currentPhase]; // Get current phase configuration.
+        providerTurnCount++;
+        currentPhaseConfig = ENCOUNTER_PHASES[currentPhase];
 
-        // Get Gemini's response (patient or coach) and the score for the current turn.
         const geminiRegularResponse = await getGeminiResponseForInteraction(
+          geminiApiSecret,
           patientState,
-          updatedConversationHistory, // History already includes provider's latest input from client.
+          updatedConversationHistory,
           latestInput,
           encounterState,
           currentPhase,
@@ -800,77 +720,64 @@ async function handleInteraction(req, res) {
           performanceRatio,
         );
 
-        // Update response and state based on Gemini's output.
         simulatorResponse = geminiRegularResponse.simulatorResponse;
         from = geminiRegularResponse.from;
         scoreUpdate = geminiRegularResponse.scoreUpdate;
         phaseComplete = geminiRegularResponse.phaseAssessment.phaseComplete;
         justificationForCompletion = geminiRegularResponse.phaseAssessment.justificationForCompletion;
 
-        // Update cumulative scores based on the current turn's score.
-        // This is only for the turn's score, not the full phase score yet.
         for (const category in scoreUpdate) {
           if (Object.hasOwnProperty.call(scoreUpdate, category)) {
-            // No direct modification of currentCumulativeScore or totalPossibleScore here based on turn score,
-            // as this is handled by the full phase score calculation when a phase completes.
-            // The turn score is simply returned for client-side display if needed.
+            currentCumulativeScore += scoreUpdate[category].points;
+            totalPossibleScore += PHASE_RUBRIC[category].max;
           }
         }
 
-        // Check for auto-advance if the phase is not already marked complete by Gemini
-        // and the maximum turns for the phase have been reached.
         if (!phaseComplete && currentPhaseConfig.maxTurns > 0 && providerTurnCount >= currentPhaseConfig.maxTurns) {
           phaseComplete = true;
           justificationForCompletion = `Automatically advanced after ${providerTurnCount} turns.`;
-          // Append auto-advance message to simulator response.
           if (from === 'patient') {
             simulatorResponse += `\n\nCOACH: ${justificationForCompletion}`;
-            from = 'coach'; // Switch to coach if auto-advancing from a patient turn.
-          } else { // If it was already a coach message from Gemini, just prepend to it.
+            from = 'coach';
+          } else {
             simulatorResponse = `COACH: ${justificationForCompletion}\n\n` + simulatorResponse;
           }
         }
-      } break; // End of 'regular_interaction' case.
-
-      case 'get_coach_tip': {
+        break;
+      }
+      case 'get_coach_tip':
         currentPhaseConfig = ENCOUNTER_PHASES[currentPhase];
-        // Provide a general tip, which is the current phase's prompt.
         simulatorResponse = currentPhaseConfig.coachPrompt || 'I don\'t have a specific tip for this phase right now. Keep focusing on the phase goals!';
         from = 'coach';
-        // No score update for requesting a tip.
         scoreUpdate = Object.fromEntries(
           Object.keys(PHASE_RUBRIC).map((key) => [key, {points: 0, justification: 'Requested coach tip (no score update for turn).'}]),
         );
-      } break; // End of 'get_coach_tip' case.
+        break;
 
-      case 'inject_provider_response': {
-        const responseType = latestInput; // This will be "good" or "poor".
+      case 'inject_provider_response':{
+        const responseType = latestInput;
         currentPhaseConfig = ENCOUNTER_PHASES[currentPhase];
 
-        // 1. Generate the AI-driven provider response and its *initial* score.
         const injectedResponseData = await generateInjectedProviderResponse(
+          geminiApiSecret,
           patientState,
-          updatedConversationHistory, // History *before* injecting this turn.
+          updatedConversationHistory,
           currentPhase,
           currentPhaseConfig.name,
           currentPhaseConfig.phaseGoalDescription,
           responseType,
         );
 
-        injectedProviderResponseText = injectedResponseData.text; // Store this to send back.
-        // The scoreUpdate from injectedResponseData is for the injected provider turn.
-        // We'll apply this to overall cumulative score later.
-
-        // 2. Add the injected provider response to the history for the *next* Gemini call (patient reaction).
+        injectedProviderResponseText = injectedResponseData.text;
         updatedConversationHistory.push({role: 'provider', parts: [{text: injectedProviderResponseText}]});
-        providerTurnCount++; // Injected response counts as a turn.
+        providerTurnCount++;
 
-        // 3. Get the patient's reaction to the injected provider response.
         const patientReactionData = await getGeminiResponseForInteraction(
+          geminiApiSecret,
           patientState,
-          updatedConversationHistory, // History now includes the injected provider response.
-          injectedProviderResponseText, // Patient reacts to this.
-          encounterState, // Pass current state.
+          updatedConversationHistory,
+          injectedProviderResponseText,
+          encounterState,
           currentPhase,
           currentPhaseConfig,
           performanceRatio,
@@ -878,33 +785,30 @@ async function handleInteraction(req, res) {
 
         simulatorResponse = patientReactionData.simulatorResponse;
         from = patientReactionData.from;
-        scoreUpdate = patientReactionData.scoreUpdate; // This is the score for the patient's reaction turn.
+        scoreUpdate = patientReactionData.scoreUpdate;
         phaseComplete = patientReactionData.phaseAssessment.phaseComplete;
         justificationForCompletion = patientReactionData.phaseAssessment.justificationForCompletion;
 
-        // Apply scores for both the injected provider turn (from injectedResponseData)
-        // AND the patient's reaction turn (from patientReactionData).
-        // For simplicity, `scoreUpdate` sent back will be the patient's reaction score.
-        // The cumulative score will reflect both.
-        // No direct modification of currentCumulativeScore or totalPossibleScore here based on turn score,
-        // as this is handled by the full phase score calculation when a phase completes.
-        // The turn score is simply returned for client-side display if needed.
+        for (const category in scoreUpdate) {
+          if (Object.hasOwnProperty.call(scoreUpdate, category)) {
+            currentCumulativeScore += scoreUpdate[category].points;
+            totalPossibleScore += PHASE_RUBRIC[category].max;
+          }
+        }
 
-        // Check for auto-advance after patient's reaction to injected response.
         if (!phaseComplete && currentPhaseConfig.maxTurns > 0 && providerTurnCount >= currentPhaseConfig.maxTurns) {
           phaseComplete = true;
           justificationForCompletion = `Automatically advanced after ${providerTurnCount} turns due to injected response.`;
-          if (from === 'patient') { // If patient responded, append coach message.
+          if (from === 'patient') {
             simulatorResponse += `\n\nCOACH: ${justificationForCompletion}`;
             from = 'coach';
-          } else { // If Gemini already acted as coach, prepend/amend its message.
+          } else {
             simulatorResponse = `COACH: ${justificationForCompletion}\n\n` + simulatorResponse;
           }
         }
-      } break; // End of 'inject_provider_response' case.
-
-      case 'move_to_next_phase': {
-        // Prevent moving past the final phase.
+        break;
+      }
+      case 'move_to_next_phase':
         if (currentPhase >= Object.keys(ENCOUNTER_PHASES).length - 1) {
           simulatorResponse = ENCOUNTER_PHASES[6].coachPrompt;
           from = 'coach';
@@ -914,96 +818,76 @@ async function handleInteraction(req, res) {
         justificationForCompletion = 'Manually advanced by provider.';
         simulatorResponse = `COACH: You have chosen to advance to the next phase. ${justificationForCompletion}`;
         from = 'coach';
-        // For manual advance, assign zero points for the *current turn's* score.
-        // The *phase score* will be calculated and added below.
         scoreUpdate = Object.fromEntries(
           Object.keys(PHASE_RUBRIC).map((key) => [key, {points: 0, justification: 'Phase manually advanced. No AI score provided for this specific turn.'}]),
         );
-      } break; // End of 'move_to_next_phase' case.
+        break;
 
       default:
         console.warn('handleInteraction: Unknown actionType received:', actionType);
         return res.status(400).send('Invalid \'actionType\' for interaction.');
     }
 
-    // --- Phase Transition Logic (applies after any action that might complete a phase) ---
-    let nextPhase = currentPhase; // Initialize nextPhase with currentPhase.
+    let nextPhase = currentPhase;
 
     if (phaseComplete) {
-      // Score the phase that just completed (which is `currentPhase` before incrementing `nextPhase`).
       const completedPhaseName = ENCOUNTER_PHASES[currentPhase].name;
       const completedPhaseDescription = ENCOUNTER_PHASES[currentPhase].phaseGoalDescription;
 
       console.log(`Phase ${currentPhase} (${completedPhaseName}) completed. Calculating score for this phase.`);
-      const fullPhaseScore = await getPhaseScoreFromGemini(patientState, updatedConversationHistory, completedPhaseName, completedPhaseDescription);
+      const fullPhaseScore = await getPhaseScoreFromGemini(geminiApiSecret, patientState, updatedConversationHistory, completedPhaseName, completedPhaseDescription);
 
-      // Store the full phase score under the completed phase's name.
-      // This is crucial for displaying phase-by-phase scores on the client.
       phaseScores = {...phaseScores, [completedPhaseName]: fullPhaseScore};
 
-      // Sum up points from the just-completed phase's full score to add to cumulative total.
-      currentCumulativeScore = 0; // Reset cumulative and recalculate from phaseScores
-      totalPossibleScore = 0;
-      Object.values(phaseScores).forEach(pScore => {
-        for (const category in pScore) {
-          if (Object.hasOwnProperty.call(pScore, category)) {
-            currentCumulativeScore += (pScore[category]?.points || 0);
-            totalPossibleScore += (PHASE_RUBRIC[category]?.max || 0);
-          }
+      for (const category in fullPhaseScore) {
+        if (Object.hasOwnProperty.call(fullPhaseScore, category)) {
+          currentCumulativeScore += (fullPhaseScore[category]?.points || 0);
+          totalPossibleScore += (PHASE_RUBRIC[category]?.max || 0);
         }
-      });
+      }
 
-
-      // Move to the next phase for the *next* interaction.
       nextPhase = currentPhase + 1;
       const nextPhaseConfig = ENCOUNTER_PHASES[nextPhase];
 
-      // Reset turn count for the *new* phase.
       providerTurnCount = 0;
 
-      // Prepare the coach message for the next phase.
       if (nextPhaseConfig) {
         if (nextPhaseConfig.coachIntro) {
           nextCoachMessage = nextPhaseConfig.coachIntro(patientState);
         } else if (nextPhaseConfig.coachPrompt) {
-          nextCoachMessage = `COACH: Entering Phase ${nextPhase}: ${nextPhaseConfig.name}.`; // More succinct intro
+          nextCoachMessage = `COACH: Transitioning to **Phase ${nextPhase}: ${nextPhaseConfig.name}**. ${nextPhaseConfig.coachPrompt}`;
         }
       }
 
-      // If transitioning to the final "Encounter Complete" phase (phase 6).
       if (nextPhase === Object.keys(ENCOUNTER_PHASES).length - 1) {
         console.log('Encounter is complete. Generating overall feedback.');
-        overallFeedback = await getOverallFeedbackFromGemini(patientState, phaseScores, updatedConversationHistory);
-        // This is the final message shown to the user on encounter completion.
+        overallFeedback = await getOverallFeedbackFromGemini(geminiApiSecret, patientState, phaseScores, updatedConversationHistory);
         nextCoachMessage = `COACH: The encounter is complete! Here is your overall feedback:\n\n${overallFeedback}`;
-        from = 'coach'; // Ensure final message is from coach.
+        from = 'coach';
       }
 
-      // Update the main simulatorResponse if a phase transition message needs to take precedence.
-      // This ensures the client shows the coach's phase transition message clearly.
       if (nextCoachMessage) {
         simulatorResponse = nextCoachMessage;
         from = 'coach';
       }
     }
 
-    // Send the final response back to the client.
+
     res.status(200).json({
       simulatorResponse: simulatorResponse,
       from: from,
-      scoreUpdate: scoreUpdate, // Score for the immediate turn/action.
+      scoreUpdate: scoreUpdate,
       phaseComplete: phaseComplete,
-      justificationForCompletion: justificationForCompletion, // More for internal use or detailed display.
-      nextCoachMessage: nextCoachMessage, // Message for next phase if applicable.
-      overallFeedback: overallFeedback, // Final feedback if encounter is truly over.
-      encounterState: { // The full updated state for the client.
+      justificationForCompletion: justificationForCompletion,
+      nextCoachMessage: nextCoachMessage,
+      overallFeedback: overallFeedback,
+      encounterState: {
         currentPhase: nextPhase,
         providerTurnCount: providerTurnCount,
-        phaseScores: phaseScores, // Updated with the score of the just-completed phase.
+        phaseScores: phaseScores,
         currentCumulativeScore: currentCumulativeScore,
         totalPossibleScore: totalPossibleScore,
       },
-      // Only include this if it was an "inject_provider_response" action to handle it client-side.
       injectedProviderResponse: injectedProviderResponseText,
     });
   } catch (error) {
@@ -1012,52 +896,62 @@ async function handleInteraction(req, res) {
   }
 }
 
+
 /**
- * Main Firebase HTTP Callable Function for the SUSAN Simulator.
- * This is the entry point for all client-side requests to the backend.
- * It routes requests to appropriate handler functions based on the 'action' in the request body.
+ * Main HTTP trigger for the simulator. Routes requests based on 'action'.
+ * @param {object} req - The Express request object.
+ * @param {object} res - The Express response object.
  */
-exports.susanSimulator = onRequest({cors: true}, async (req, res) => {
-  // Only allow POST requests.
-  if (req.method !== 'POST') {
-    return res.status(405).send('Method Not Allowed');
+exports.echoSimulator = onRequest({ cors: true, secrets: [GEMINI_API_KEY] }, async (req, res) => {
+  // Handle preflight requests for CORS
+  if (req.method === 'OPTIONS') {
+    return cors(req, res, () => res.status(204).send(''));
   }
 
-  try {
-    // Ensure the GEMINI_API_KEY is set.
-    if (!GEMINI_API_KEY) {
-      console.error('susanSimulator: GEMINI_API_KEY is not set in the environment.');
-      return res.status(500).send('Server configuration error.');
+  // Apply CORS middleware for actual requests
+  cors(req, res, async () => {
+    if (req.method !== 'POST') {
+      return res.status(405).send('Method Not Allowed');
     }
 
-    console.log('susanSimulator: Received request body:', JSON.stringify(req.body, null, 2));
+    try {
+      // The secret value is now accessed via GEMINI_API_KEY.value()
+      // The `secrets: [GEMINI_API_KEY]` in onRequest ensures it's loaded.
+      // We don't need a direct `if (!GEMINI_API_KEY)` check here like before,
+      // as `defineSecret` handles the binding and will throw a deployment error
+      // if the secret isn't configured in Secret Manager.
+      // If the secret is accessed before it's ready, the .value() call might throw.
+      // The `secrets` option in onRequest ensures it's available.
 
-    const {action} = req.body; // Extract the action type from the request.
+      console.log('echoSimulator: Received request body:', JSON.stringify(req.body, null, 2));
 
-    // Route the request based on the action type.
-    if (action === 'generate_patient') {
-      console.log('susanSimulator: Routing to handleGeneratePatient.');
-      await handleGeneratePatient(res);
-    } else if (action === 'interact_conversation') {
-      console.log('susanSimulator: Routing to handleInteraction for conversation.');
-      await handleInteraction(req, res);
-    } else if (action === 'get_help_advice') {
-      console.log('susanSimulator: Routing to handleHelpAdvice.');
-      const {patientInfo, providerPerception, question} = req.body;
-      // Validate required data for help advice.
-      if (!patientInfo || !providerPerception || !question) {
-        return res.status(400).send('Missing data for help advice request.');
+      const {action} = req.body;
+
+      if (action === 'generate_patient') {
+        console.log('echoSimulator: Routing to handleGeneratePatient.');
+        await handleGeneratePatient(req, res, GEMINI_API_KEY); // Pass the secret object
+      } else if (action === 'interact_conversation') {
+        console.log('echoSimulator: Routing to handleInteraction for conversation.');
+        await handleInteraction(req, res, GEMINI_API_KEY); // Pass the secret object
+      } else if (action === 'get_help_advice') {
+        console.log('echoSimulator: Routing to handleHelpAdvice.');
+        const {patientInfo, providerPerception, question} = req.body;
+        if (!patientInfo || !providerPerception || !question) {
+          return res.status(400).send('Missing data for help advice request.');
+        }
+        await getHelpAdviceFromGemini(GEMINI_API_KEY, patientInfo, providerPerception, question)
+          .then(advice => res.status(200).json({advice: advice}))
+          .catch(error => {
+            console.error('echoSimulator: Error getting help advice from Gemini:', error);
+            res.status(500).send('Failed to get help advice: ' + error.message);
+          });
+      } else {
+        console.warn('echoSimulator: Invalid or missing \'action\' in request body:', action);
+        return res.status(400).send('Invalid or missing \'action\' in request body. Expected \'generate_patient\', \'interact_conversation\', or \'get_help_advice\'.');
       }
-      const advice = await getHelpAdviceFromGemini(patientInfo, providerPerception, question);
-      res.status(200).json({advice: advice});
-    } else {
-      // Handle unknown or missing action types.
-      console.warn('susanSimulator: Invalid or missing \'action\' in request body:', action);
-      return res.status(400).send('Invalid or missing \'action\' in request body. Expected \'generate_patient\', \'interact_conversation\', or \'get_help_advice\'.');
+    } catch (error) {
+      console.error('echoSimulator: Error processing request:', error);
+      res.status(500).send('An internal server error occurred: ' + error.message);
     }
-  } catch (error) {
-    // Catch any unexpected errors during request processing.
-    console.error('susanSimulator: Error processing request after retries:', error);
-    res.status(500).send('An internal server error occurred: ' + error.message);
-  }
+  });
 });
