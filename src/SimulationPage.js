@@ -356,7 +356,7 @@ const styles = {
 
 // Client-side mirroring of phases for display purposes (maxScore is still used here)
 const ENCOUNTER_PHASES_CLIENT = {
-  0: { name: "Introduction & Initial Presentation", maxScore: 0, coachIntro: (patient) => `Welcome to ECHO! You're about to meet **${patient.name}**, a **${patient.age}**-year-old. Their main complaint is: "${patient.mainComplaint}". Your goal is to conduct a complete clinical encounter adhering to the Patient-Centered / Biopsychosocial model. Let's begin with **Phase 1: Initiation and Building the Relationship**. What is your first step?"` },
+  0: { name: "Introduction & Initial Presentation", maxScore: 0, coachIntro: (patient) => `Welcome to ECHO! You're about to meet ${patient.name}, a ${patient.age}-year-old. Their main complaint is: "${patient.mainComplaint}". Your goal is to conduct a complete clinical encounter with cultural humility and shared understanding. Phase 1: Initiation and Building the Relationship: What is your first step?"` },
   1: { name: "Initiation & Building the Relationship", maxScore: 5 },
   2: { name: "Information Gathering & History Taking", maxScore: 5 },
   3: { name: "Physical Examination", maxScore: 5 },

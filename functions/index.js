@@ -95,7 +95,7 @@ const ENCOUNTER_PHASES = { /* ... your ENCOUNTER_PHASES object ... */
   0: { // Special introductory phase, not scored directly
     name: 'Introduction & Initial Presentation',
     coachIntro: (patient) =>
-      `Welcome to ECHO! You are entering a patient room, where you will meet ${patient.name}, a ${patient.age}-year-old ${patient.genderIdentity} (${patient.pronouns}) whose primary language is ${patient.nativeLanguage} (${patient.englishProficiency} English proficiency). Their main complaint is: "${patient.mainComplaint}". Your goal is to conduct a complete clinical encounter with cultural humility and shared understanding. Entering Phase 1: Initiation and Building the Relationship. What is your first step?"`,
+      `Welcome to ECHO! You are entering a patient room, where you will meet ${patient.name}, a ${patient.age}-year-old ${patient.genderIdentity} (${patient.pronouns}) whose primary language is ${patient.nativeLanguage} (${patient.englishProficiency} English proficiency). Their main complaint is: "${patient.mainComplaint}". Your goal is to conduct a complete clinical encounter with cultural humility and shared understanding. Phase 1: Initiation and Building the Relationship. What is your first step?"`,
     phaseGoalDescription: 'This is the initial introduction to the scenario. There are no direct tasks for the provider in this phase other than to transition into Phase 1.',
     maxTurns: 0, // No turns in this intro phase
   },
