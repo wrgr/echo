@@ -356,7 +356,11 @@ const styles = {
 
 // Client-side mirroring of phases for display purposes (maxScore is still used here)
 const ENCOUNTER_PHASES_CLIENT = {
-  0: { name: "Introduction & Initial Presentation", maxScore: 0, coachIntro: (patient) => `Welcome to ECHO! You're about to meet ${patient.name}, a ${patient.age}-year-old. Their main complaint is: "${patient.mainComplaint}". Your goal is to conduct a complete clinical encounter with cultural humility and shared understanding. Phase 1: Initiation and Building the Relationship: What is your first step?"` },
+  0: {
+    name: "Introduction & Initial Presentation",
+    maxScore: 0,
+    coachIntro: (patient) => `You are entering a patient room, where you will meet ${patient.name}. They are a ${patient.age}-year-old ${patient.genderIdentity} (${patient.pronouns}) whose primary language is ${patient.nativeLanguage} (${patient.englishProficiency} English proficiency). Their main complaint is: "${patient.mainComplaint}". How do you greet them?`,
+  },
   1: { name: "Initiation & Building the Relationship", maxScore: 5 },
   2: { name: "Information Gathering & History Taking", maxScore: 5 },
   3: { name: "Physical Examination", maxScore: 5 },
@@ -644,7 +648,6 @@ function SimulationPage() {
   };
 
   return (
-    // **FIX:** Using styles.appContainer for the main wrapper div
     <div style={styles.appContainer}>
       {showInstructions && (
         <div style={styles.modalOverlay}>
@@ -652,7 +655,7 @@ function SimulationPage() {
             <button style={styles.modalCloseButton} onClick={() => setShowInstructions(false)}>X</button>
             <h2 style={styles.modalTitle}>Welcome to ECHO: Your Clinical Communication Simulator!</h2>
             <p style={styles.modalText}>
-              ECHO (Empowering Conversations for better Healthcare Outcomes) is designed to help you practice and refine your patient communication and clinical reasoning skills, especially with patients who may have Limited English Proficiency (LEP) or diverse cultural backgrounds.
+              ECHO (Effective Conversations for Healthcare Optimization) is designed to help you practice and refine your patient communication and clinical reasoning skills, especially with patients who may have Limited English Proficiency (LEP) or diverse cultural backgrounds.
             </p>
             <h3 style={styles.modalTextBold}>How to Use the Simulator:</h3>
             <ul style={styles.modalList}>
