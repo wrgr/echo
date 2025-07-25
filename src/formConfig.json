@@ -1,0 +1,35 @@
+[
+  { "id": "patient_name", "label": "Patient's Name", "type": "text" },
+  { "id": "dob", "label": "Date of Birth", "type": "date" },
+  { "id": "address", "label": "Address", "type": "text" },
+  { "id": "pronouns", "label": "Pronouns", "type": "text" },
+  { "id": "arrival", "label": "Day and Time of Arrival", "type": "datetime-local" },
+  { "id": "departure", "label": "Day and Time of Departure", "type": "datetime-local" },
+  { "id": "doctor_name", "label": "Doctor's Name", "type": "text" },
+  { "id": "medications", "label": "Medications Provided (Dose & Duration)", "type": "textarea" },
+  { "id": "allergies", "label": "Allergies", "type": "textarea" },
+  { "id": "post_visit_feelings", "label": "How are you feeling after the visit?", "type": "textarea" },
+  { "id": "visit_addressed_issues", "label": "Did the visit address all your issues/concerns?", "type": "yesno_explain" },
+  { "id": "previous_providers", "label": "Previous Providers Seen (and their effectiveness)", "type": "textarea" },
+  { "id": "previous_medications", "label": "List of Previous Medications (and doses)", "type": "textarea" },
+  { "id": "understanding_pain", "label": "Understanding of Pain Cause", "type": "textarea" },
+  { "id": "understanding_treatment", "label": "Understanding of Treatment Options", "type": "textarea" },
+  { "id": "treatment_costs", "label": "Treatment Costs", "type": "text" },
+  { 
+    "id": "expectations", 
+    "label": "What to Expect (select all that apply)", 
+    "type": "checkbox", 
+    "options": [
+      "Follow dosage instructions carefully.",
+      "Be aware of potential side effects.",
+      "Attend all follow-up appointments.",
+      "Contact the clinic with any questions or concerns.",
+      "Other"
+    ]
+  },
+  { "id": "clinic_name", "label": "Clinic Name", "type": "text" },
+  { "id": "clinic_address", "label": "Clinic Address", "type": "text" },
+  { "id": "clinic_phone", "label": "Phone Number", "type": "text" },
+  { "id": "clinic_email", "label": "Email", "type": "email" },
+  { "id": "clinic_website", "label": "Website", "type": "url" }
+]

@@ -1,7 +1,8 @@
-import React from "react";
+//import React from "react";
 import { Routes, Route, Link } from "react-router-dom";
 import SimulationPage from "./SimulationPage"; // Import the new SimulationPage
 import HelpPage from "./HelpPage"; // Import the new HelpPage
+import DynamicForm from "./pages/DynamicForm";
 
 // --- Styling ---
 const styles = {
@@ -131,14 +132,19 @@ function App() {
       </header>
 
       <nav style={styles.navContainer}>
+        <Link to="/pre-visit-form" style={styles.navLink}>Pre-Visit Form</Link>
         <Link to="/simulation" style={styles.navLink}>Simulation</Link>
         <Link to="/help" style={styles.navLink}>Help & Advice</Link>
+        
+
       </nav>
 
       <Routes>
+        <Route path="/pre-visit-form" element={<DynamicForm />} />
         <Route path="/simulation" element={<SimulationPage />} />
         <Route path="/help" element={<HelpPage />} />
         <Route path="/" element={<SimulationPage />} /> {/* Default route */}
+         
       </Routes>
     </div>
   );
