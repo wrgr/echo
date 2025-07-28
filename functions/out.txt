@@ -1,8 +1,0 @@
-
-> start
-> npm run shell test2.js
-
-
-> shell
-> firebase functions:shell test2.js
-
