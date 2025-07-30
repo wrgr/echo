@@ -1,6 +1,8 @@
 // Node.js standard imports
 const https = require('https');
 const { Buffer } = require('buffer');
+const fs = require('fs');
+const path = require('path');
 const admin = require('firebase-admin');
 
 // Firebase Functions SDK imports
@@ -22,6 +24,24 @@ setGlobalOptions({ region: 'us-central1' });
 // This tells Firebase that your function needs access to a secret named 'GEMINI_API_KEY'.
 // The name here MUST match the name of the secret in Google Cloud Secret Manager.
 const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY');
+
+// Load prompt templates from JSON file
+const promptsPath = path.join(__dirname, 'prompts.json');
+const promptsData = JSON.parse(fs.readFileSync(promptsPath, 'utf8'));
+const promptMap = Object.fromEntries(promptsData.map(p => [p.prompt, p]));
+
+// Utility to interpolate template strings using variables
+const formatPrompt = (template, vars = {}) =>
+  new Function(...Object.keys(vars), `return \`${template}\`;`)(
+    ...Object.values(vars),
+  );
+
+const getPrompt = (name) => {
+  if (!promptMap[name]) {
+    throw new Error(`Prompt '${name}' not found in prompts.json`);
+  }
+  return promptMap[name].promptText;
+};
 
 // --- Helper function for the API call with retries ---
 // This function will now accept the secret object and extract its value when used.
@@ -156,49 +176,15 @@ const PHASE_RUBRIC = {
 
 // Helper function to get a score for a completed phase from Gemini
 async function getPhaseScoreFromGemini(geminiApiSecret, patientState, conversationHistory, phaseName, phaseDescription) {
-  const scorePrompt = `
-    You are an expert medical educator evaluating a provider's performance in a clinical encounter simulation.
-    Your task is to provide a comprehensive score for the entire phase provided.
-
-    Your entire response MUST be a single, valid JSON object and nothing else.
-    Do not wrap it in markdown.
-
-    ---
-    **PHASE TO SCORE: ${phaseName}**
-    **PHASE GOAL:** ${phaseDescription}
-    ---
-
-    **RUBRIC FOR SCORING THIS PHASE (Max 1 point per category):**
-    ${Object.entries(PHASE_RUBRIC).map(([key, value]) => `- ${key} (${value.max} pt): ${value.desc}`).join('\n')}
-
-    ---
-    **PATIENT PROFILE:**
-    ${JSON.stringify(patientState, null, 2)}
-    ---
-
-    **CONVERSATION HISTORY (All turns within the encounter so far, relevant to this phase):**
-    ${JSON.stringify(conversationHistory, null, 2)}
-    ---
-
-    **YOUR TASK:**
-    Based on the 'PHASE TO SCORE', its 'PHASE GOAL', the 'RUBRIC FOR SCORING THIS PHASE', and the 'CONVERSATION HISTORY':
-
-    1.  Evaluate the provider's overall performance during the *entire duration* of this specific phase.
-    2.  Award points (0 or 1) for each category in the RUBRIC for this phase's *overall performance*.
-    3.  Provide a brief, specific \`justification\` for the points awarded or not awarded in each category, referencing actions (or inactions) from the conversation history.
-
-    4.  Response Format: Your output MUST be a JSON object with the following keys:
-
-        \`\`\`json
-        {
-          "communication": { "points": 0 | 1, "justification": "string" },
-          "trustRapport": { "points": 0 | 1, "justification": "string" },
-          "accuracy": { "points": 0 | 1, "justification": "string" },
-          "culturalHumility": { "points": 0 | 1, "justification": "string" },
-          "sharedUnderstanding": { "points": 0 | 1, "justification": "string" }
-        }
-        \`\`\`
-  `;
+  const scorePrompt = formatPrompt(getPrompt('phase_score'), {
+    phaseName,
+    phaseDescription,
+    patientState: JSON.stringify(patientState, null, 2),
+    conversationHistory: JSON.stringify(conversationHistory, null, 2),
+    rubricText: Object.entries(PHASE_RUBRIC)
+      .map(([key, value]) => `- ${key} (${value.max} pt): ${value.desc}`)
+      .join('\n'),
+  });
 
   const postData = JSON.stringify({
     'contents': [{'parts': [{'text': scorePrompt}]}],
@@ -251,38 +237,7 @@ async function getPhaseScoreFromGemini(geminiApiSecret, patientState, conversati
  * @return {Promise<object>} A promise that resolves with the generated patient profile.
  */
 async function generatePatientFromGemini(geminiApiSecret) {
-  const patientGenerationPrompt = `
-    You are a medical simulation AI. Your task is to generate a detailed, realistic patient profile for a clinical encounter simulation. The patient should be a unique individual with specific characteristics and an accurate medical complaint. Ensure the patient's characteristics are diverse (e.g., varying age, gender identity, native language, English proficiency, cultural background, and type of complaint).
-
-    Your entire response MUST be a single, valid JSON object and nothing else. Do not wrap it in markdown or add any additional text.
-
-    Response Format:
-    {
-      "name": "string",
-      "age": number,
-      "genderIdentity": "string (e.g., 'Male', 'Female', 'Non-binary')",
-      "pronouns": "string (e.g., 'he/him', 'she/her', 'they/them')",
-      "nativeLanguage": "string (e.g., 'Spanish', 'Somali', 'Mandarin', 'Vietnamese', 'Arabic', 'Russian')",
-      "englishProficiency": "string ('None', 'Beginner', 'Limited', 'Fluent')",
-      "culturalBackground": "string (brief description of cultural values relevant to healthcare, e.g., 'values family input', 'prefers traditional healing', 'may be hesitant to disclose')",
-      "mainComplaint": "string (patient's chief complaint in their native language if not fluent, with English translation in parentheses if applicable)",
-      "secondaryComplaint": "string (optional, a less prominent complaint)",
-      "hiddenConcern": "string (an underlying worry the patient has but might not immediately state, e.g., 'worried about cancer', 'financial burden')",
-      "illnessPerception_Ideas": "string (patient's ideas about what's causing their illness)",
-      "illnessPerception_Concerns": "string (patient's worries/fears about their illness)",
-      "illnessPerception_Expectations": "string (patient's expectations for diagnosis, treatment, and outcome)",
-      "relevantPastMedicalHistory": "string (brief, relevant past medical history, e.g., 'Type 2 Diabetes', 'Asthma')",
-      "relevantMedicationsAndAllergies": "string (brief, relevant medications and known allergies)",
-      "relevantFamilyHistory": "string (brief, relevant family history, e.g., 'Mother had heart disease')",
-      "relevantSocialHistory": "string (brief, relevant social history, lifestyle, living situation, occupation)",
-      "physicalExamFindings": "string (brief, realistic physical exam findings relevant to main complaint)",
-      "correctDiagnosis": "string (the most likely medical diagnosis)",
-      "managementPlanOutline": "string (brief outline of management steps: tests, treatments, referrals)",
-      "redFlags_worseningConditions": "string (what signs/symptoms would indicate a worsening condition that warrants immediate attention)",
-      "familyInvolvementPreference": "string ('High', 'Medium', 'Low')",
-      "patientPersona": "string (brief description of their general demeanor/attitude, e.g., 'anxious but cooperative', 'stoic', 'demanding')"
-    }
-  `;
+  const patientGenerationPrompt = getPrompt('generate_patient');
 
   const postData = JSON.stringify({
     'contents': [{'parts': [{'text': patientGenerationPrompt}]}],
@@ -329,34 +284,11 @@ async function generatePatientFromGemini(geminiApiSecret) {
 }
 // Helper function to get overall feedback from Gemini at the end of the encounter
 async function getOverallFeedbackFromGemini(geminiApiSecret, patientState, phaseScores, conversationHistory) {
-  const feedbackPrompt = `
-    You are an expert medical educator providing comprehensive final feedback for a provider's performance in a clinical encounter simulation.
-    The simulation followed the Patient-Centered / Biopsychosocial model across several phases.
-
-    Your response should be a well-structured text summary, highlighting:
-    - Overall strengths demonstrated by the provider throughout the encounter.
-    - Key areas for improvement, with specific examples from the conversation if possible.
-    - How well the provider integrated patient-centered care and cultural humility.
-    - A general assessment of the provider's clinical communication and reasoning.
-
-    Do not use markdown fences (like \`\`\`json\`). Just return plain text.
-
-    ---
-    **PATIENT PROFILE:**
-    ${JSON.stringify(patientState, null, 2)}
-    ---
-
-    **PHASE-BY-PHASE SCORES (Including justifications):**
-    ${JSON.stringify(phaseScores, null, 2)}
-    ---
-
-    **FULL CONVERSATION TRANSCRIPT:**
-    ${JSON.stringify(conversationHistory, null, 2)}
-    ---
-
-    **YOUR TASK:**
-    Synthesize all the provided information to generate a holistic summary of the provider's performance. Focus on constructive feedback for learning. Start with an encouraging tone.
-  `;
+  const feedbackPrompt = formatPrompt(getPrompt('overall_feedback'), {
+    patientState: JSON.stringify(patientState, null, 2),
+    phaseScores: JSON.stringify(phaseScores, null, 2),
+    conversationHistory: JSON.stringify(conversationHistory, null, 2),
+  });
 
   const postData = JSON.stringify({
     'contents': [{'parts': [{'text': feedbackPrompt}]}],
@@ -403,76 +335,13 @@ async function getGeminiResponseForInteraction(
         'The patient\'s information may become slightly less direct or require more probing.' :
         'The patient should remain cooperative and provide information clearly and accurately based on their profile.'));
 
-  const geminiPrompt = `
-    You are ECHO, a clinical communication simulator.
-    Your primary role is to act as the **patient** based on the provided 'Patient Profile' and 'Current Encounter Phase'.
-    You will also act as the **coach** to provide feedback and facilitate phase progression.
-
-    Your entire response MUST be a single, valid JSON object and nothing else.
-    Do not wrap it in markdown.
-
-    ---
-    **CURRENT ENCOUNTER PHASE: ${phaseConfig.name} (Phase ${currentPhase})**
-    **GOAL FOR THIS PHASE:** ${phaseConfig.phaseGoalDescription}
-    ---
-
-    **RUBRIC FOR SCORING (For your evaluation of the provider's *performance in THIS TURN*):**
-    ${Object.entries(PHASE_RUBRIC).map(([key, value]) => `- ${key} (${value.max} pt): ${value.desc}`).join('\n')}
-
-    ---
-    **PATIENT PROFILE:**
-    ${JSON.stringify(patientState, null, 2)}
-    ---
-
-    **CONVERSATION HISTORY (All previous turns, including current provider's turn):**
-    ${JSON.stringify(formattedHistoryForGemini, null, 2)}
-    ---
-
-    **FIDELITY INSTRUCTION (Based on provider's cumulative performance):**
-    ${fidelityInstruction}
-    ---
-
-    **YOUR TASK:**
-    Based on the 'PROVIDER'S LATEST INPUT', the 'CURRENT ENCOUNTER PHASE', the 'PATIENT PROFILE', the 'CONVERSATION HISTORY', and the 'FIDELITY INSTRUCTION':
-
-    1.  **Patient Response:** Generate the patient's natural, realistic response to the provider's \`latestInput\`. The patient's response should be consistent with their persona, language proficiency, illness, and the fidelity instruction.
-        * If the provider asks a clinical question, the patient responds naturally.
-        * If the provider asks for an interpreter for a 'None' or 'Beginner' English proficiency patient, the **coach** should confirm the interpreter's arrival (see point 4).
-        * If the patient has a 'secondaryComplaint' or 'hiddenConcern', only reveal it if the provider asks appropriate, probing questions.
-        * If the patient has \`redFlags_worseningConditions\` and the provider's actions are poor or critical signs are missed (as determined by your internal logic for this turn's context), consider subtly introducing hints of this.
-
-    2.  **Phase Progression Assessment:** Evaluate the provider's overall performance *within the current phase* up to and including the latest input.
-        * Determine if the \`GOAL FOR THIS PHASE\` has been adequately met.
-        * Set \`phaseComplete\` to \`true\` if the goals are met, \`false\` otherwise. Provide a \`justificationForCompletion\`.
-
-    3.  **Scoring for Current Turn:** Evaluate the \`PROVIDER'S LATEST INPUT\` against the \`RUBRIC FOR SCORING\`. Award 0 or 1 point for each category. Provide a brief, specific \`justification\` for each point awarded or not awarded.
-
-    4.  **Response Type Determination (\`from\` field):**
-        * Default to \`"patient"\` for the \`simulatorResponse\`.
-        * **Switch to \`"coach"\` IF:**
-            * The provider asks for an interpreter and the patient's \`englishProficiency\` is "None" or "Beginner". \`simulatorResponse\` should confirm interpreter.
-            * The provider's \`latestInput\` is nonsensical, irrelevant to a medical conversation, or gibberish. \`simulatorResponse\` should be a helpful coaching tip.
-
-    5.  **Response Format:** Your output MUST be a JSON object with the following keys:
-
-        \`\`\`json
-        {
-          "from": "patient" | "coach", // MANDATORY: indicates who the response is from
-          "simulatorResponse": "string", // The message from the patient OR coach
-          "phaseAssessment": {
-            "phaseComplete": boolean, // true if phase goals are met
-            "justificationForCompletion": "string" // Explanation for phase completion status
-          },
-          "scoreUpdate": { // Score for the CURRENT TURN'S interaction
-            "communication": { "points": 0 | 1, "justification": "string" },
-            "trustRapport": { "points": 0 | 1, "justification": "string" },
-            "accuracy": { "points": 0 | 1, "justification": "string" },
-            "culturalHumility": { "points": 0 | 1, "justification": "string" },
-            "sharedUnderstanding": { "points": 0 | 1, "justification": "string" }
-          }
-        }
-        \`\`\`
-  `;
+  const geminiPrompt = formatPrompt(getPrompt("gemini_interaction"), {
+    phaseConfig,
+    currentPhase,
+    patientState,
+    formattedHistoryForGemini,
+    fidelityInstruction,
+  });
 
   const postData = JSON.stringify({
     'contents': [{'parts': [{'text': geminiPrompt}]}],
@@ -512,50 +381,14 @@ async function generateInjectedProviderResponse(
   phaseGoalDescription,
   responseType,
 ) {
-  const prompt = `
-    You are ECHO, a clinical communication simulator.
-    Your task is to generate a **provider's response** that is either "${responseType}" or "poor" for the current clinical encounter context.
-    You must also provide a score for this generated provider response based on the rubric.
-
-    Your entire response MUST be a single, valid JSON object and nothing else.
-    Do not wrap it in markdown.
-
-    ---
-    **CURRENT ENCOUNTER PHASE: ${phaseName} (Phase ${currentPhase})**
-    **GOAL FOR THIS PHASE:** ${phaseGoalDescription}
-    ---
-
-    **RUBRIC FOR SCORING THIS PROVIDER RESPONSE (Max 1 point per category):**
-    ${Object.entries(PHASE_RUBRIC).map(([key, value]) => `- ${key} (${value.max} pt): ${value.desc}`).join('\n')}
-
-    ---
-    **PATIENT PROFILE:**
-    ${JSON.stringify(patientState, null, 2)}
-    ---
-
-    **CONVERSATION HISTORY (All previous turns):**
-    ${JSON.stringify(conversationHistory, null, 2)}
-    ---
-
-    **YOUR TASK:**
-    Generate a concise, realistic provider response that exemplifies a "${responseType}" interaction in this phase.
-    Then, score this generated provider response against the rubric.
-
-    Response Format: Your output MUST be a JSON object with the following keys:
-
-    \`\`\`json
-    {
-      "text": "string", // The generated provider response
-      "scoreUpdate": { // Score for this generated provider response
-        "communication": { "points": 0 | 1, "justification": "string" },
-        "trustRapport": { "points": 0 | 1, "justification": "string" },
-        "accuracy": { "points": 0 | 1, "justification": "string" },
-        "culturalHumility": { "points": 0 | 1, "justification": "string" },
-        "sharedUnderstanding": { "points": 0 | 1, "justification": "string" }
-      }
-    }
-    \`\`\`
-  `;
+  const prompt = formatPrompt(getPrompt("provider_response"), {
+    patientState,
+    conversationHistory,
+    currentPhase,
+    phaseName,
+    phaseGoalDescription,
+    responseType,
+  });
 
   const postData = JSON.stringify({
     'contents': [{'parts': [{'text': prompt}]}],
@@ -587,28 +420,11 @@ async function generateInjectedProviderResponse(
 
 // Helper function for the new Help/Advice functionality
 async function getHelpAdviceFromGemini(geminiApiSecret, patientInfo, providerPerception, question) {
-  const prompt = `
-    You are ECHO, an expert medical educator and communication coach.
-    A healthcare provider is asking for advice on a specific clinical communication scenario.
-    Provide actionable, empathetic, and culturally sensitive advice. Focus on principles of patient-centered care and communication with LEP patients.
-
-    ---
-    **PATIENT INFORMATION:**
-    ${patientInfo}
-    ---
-
-    **PROVIDER'S PERCEPTION OF INTERACTION:**
-    ${providerPerception}
-    ---
-
-    **PROVIDER'S QUESTION:**
-    ${question}
-    ---
-
-    **YOUR TASK:**
-    Provide comprehensive and practical advice to the provider. Structure your advice clearly, perhaps with bullet points or numbered steps if appropriate. Maintain a supportive and educational tone.
-    Do not use markdown fences (like \`\`\`json\`). Just return plain text.
-  `;
+  const prompt = formatPrompt(getPrompt("help_advice"), {
+    patientInfo,
+    providerPerception,
+    question,
+  });
 
   const postData = JSON.stringify({
     'contents': [{'parts': [{'text': prompt}]}],
