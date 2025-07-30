@@ -29,7 +29,7 @@ const styles = {
   sectionTitle: {
     fontSize: '1.4em',
     fontWeight: 'bold',
-    color: '#15304a',
+    color: 'var(--accent-color)',
     marginBottom: '10px',
     borderBottom: '1px solid #eef2f7',
     paddingBottom: '10px',
@@ -55,7 +55,7 @@ const styles = {
     outline: 'none',
     transition: 'border-color 0.2s',
     '&:focus': {
-      borderColor: '#0d9488',
+      borderColor: 'var(--primary-color)',
     },
   },
   input: {
@@ -68,14 +68,14 @@ const styles = {
     outline: 'none',
     transition: 'border-color 0.2s',
     '&:focus': {
-      borderColor: '#0d9488',
+      borderColor: 'var(--primary-color)',
     },
   },
   button: {
     padding: '12px 25px',
     fontSize: '1em',
     fontWeight: 'bold',
-    backgroundColor: '#0d9488',
+    backgroundColor: 'var(--primary-color)',
     color: 'white',
     border: 'none',
     borderRadius: '25px',

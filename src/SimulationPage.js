@@ -73,7 +73,7 @@ const styles = {
   patientInfoTitle: {
     fontSize: "1.2em",
     fontWeight: "bold",
-    color: "#15304a",
+    color: "var(--accent-color)",
     marginBottom: "10px",
   },
   patientInfoDetail: {
@@ -108,7 +108,7 @@ const styles = {
     },
   },
   patientMessage: {backgroundColor: "#eef2f7", color: "#334155", alignSelf: "flex-start", borderBottomLeftRadius: "5px", },
-  providerMessage: {backgroundColor: "#0d9488", color: "white", alignSelf: "flex-end", borderBottomRightRadius: "5px", },
+  providerMessage: {backgroundColor: "var(--primary-color)", color: "white", alignSelf: "flex-end", borderBottomRightRadius: "5px", },
   coachMessage: {
     backgroundColor: "#fffbeb", color: "#b45309", alignSelf: "center",
     border: "1px solid #fde68a", width: "90%", textAlign: "center", fontStyle: "italic",
@@ -137,7 +137,7 @@ const styles = {
     },
   },
   sendButton: {
-    padding: "10px 20px", fontSize: "16px", border: "none", backgroundColor: "#0d9488", color: "white", cursor: "pointer", borderRadius: "25px", marginLeft: "10px", transition: "background-color 0.2s",
+    padding: "10px 20px", fontSize: "16px", border: "none", backgroundColor: "var(--primary-color)", color: "white", cursor: "pointer", borderRadius: "25px", marginLeft: "10px", transition: "background-color 0.2s",
     "@media (max-width: 768px)": {
       width: "100%",
       marginLeft: "0",
@@ -150,7 +150,7 @@ const styles = {
     borderTop: "1px solid #dbe1e8",
     fontSize: "1.1em",
     fontWeight: "bold",
-    color: "#15304a",
+    color: "var(--accent-color)",
     flexShrink: 0,
     display: "flex", // Make it a flex container
     flexWrap: "wrap", // Allow items to wrap
@@ -178,7 +178,7 @@ const styles = {
     },
   },
   scoreCardTitle: {
-    color: "#15304a",
+    color: "var(--accent-color)",
     textAlign: "left",
     fontSize: "16px",
     margin: "0 0 8px 0",
@@ -215,7 +215,7 @@ const styles = {
       padding: "20px 10px",
     },
   },
-  finalScoreValue: {fontSize: "52px", fontWeight: "bold", color: "#0d9488", margin: "20px 0",
+  finalScoreValue: {fontSize: "52px", fontWeight: "bold", color: "var(--primary-color)", margin: "20px 0",
     "@media (max-width: 768px)": {
       fontSize: "40px",
     },
@@ -268,7 +268,7 @@ const styles = {
   phaseIndicator: {
     textAlign: "center",
     fontWeight: "bold",
-    color: "#0d9488",
+    color: "var(--primary-color)",
     marginBottom: "10px",
     fontSize: "1.1em",
     "@media (max-width: 768px)": {
@@ -315,7 +315,7 @@ const styles = {
     padding: "5px",
   },
   modalTitle: {
-    color: "#15304a",
+    color: "var(--accent-color)",
     fontSize: "24px",
     fontWeight: "700",
     marginTop: "0",
