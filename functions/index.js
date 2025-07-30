@@ -5,11 +5,18 @@ const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { logger } = require("firebase-functions");
 const { initializeApp, getApps } = require("firebase-admin/app");
 const { SecretManagerServiceClient } = require("@google-cloud/secret-manager");
+const fs = require('fs');
+const path = require('path');
 
 if (getApps().length === 0) {
   initializeApp();
 }
 const secretClient = new SecretManagerServiceClient();
+
+// Load Gemini prompt configurations from external JSON file
+const prompts = JSON.parse(
+  fs.readFileSync(path.join(__dirname, 'prompts.json'), 'utf8')
+);
 
 // ============================================================================
 // #2: SECRET FETCHING
@@ -43,51 +50,14 @@ exports.getNextChallenge = onCall(async (request) => {
 
   const GEMINI_API_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
 
-  const prompt = `
-    You are the game master for "Outbreak Z", a public health survival game.
-    The player's current state is: Day ${currentState.day}, Infection ${currentState.infectionRate}%, Food ${currentState.resources.food}, Water ${currentState.resources.water}, Medical ${currentState.resources.medical}.
-    The consequence of their last choice was: "${lastChoiceConsequence || 'The game has just started.'}"
-
-    Your task is to generate a BRAND NEW, dynamic challenge for the player for the NEXT turn. You must:
-    1.  Find a REAL, publicly accessible URL to a scientific paper or article about epidemiology, virology, public health, or crisis response. Use sources like CDC, WHO, NCBI/PubMed, NEJM, etc.
-    2.  Create a "CDC Field Note" summarizing a key finding from the article in simple terms.
-    3.  Create a multiple-choice question based on the real-world information in the article.
-    4.  Create two distinct answer options. For EACH option, you must define:
-        - If it's the correct answer ('correct': true/false).
-        - A compelling 'consequence' string explaining the outcome.
-        - The specific game state changes ('resourceChanges', 'infectionChange', 'pointsGained').
-
-    Respond with ONLY a valid JSON object with this exact structure:
-    {
-      "cdcNote": {
-        "title": "CDC Field Note: <Topic>",
-        "text": "<Your summary>",
-        "link": "<The real URL you found>",
-        "linkText": "Source: <Name of the source>"
-      },
-      "challengeQuestion": {
-        "text": "<The question you wrote>",
-        "options": [
-          {
-            "text": "<Answer Option 1>",
-            "correct": <true_or_false>,
-            "consequence": "<Outcome description 1>",
-            "resourceChanges": { "food": <number>, "water": <number>, "medical": <number> },
-            "infectionChange": <number>,
-            "pointsGained": <number>
-          },
-          {
-            "text": "<Answer Option 2>",
-            "correct": <true_or_false>,
-            "consequence": "<Outcome description 2>",
-            "resourceChanges": { "food": <number>, "water": <number>, "medical": <number> },
-            "infectionChange": <number>,
-            "pointsGained": <number>
-          }
-        ]
-      }
-    }
-  `;
+  const promptConfig = prompts.find(p => p.prompt === 'generate_next_challenge');
+  const promptTemplate = promptConfig ? promptConfig.promptText : '';
+  const templateFn = new Function(
+    'currentState',
+    'lastChoiceConsequence',
+    `return \`${promptTemplate}\`;`
+  );
+  const prompt = templateFn(currentState, lastChoiceConsequence);
 
   const requestBody = { contents: [{ parts: [{ text: prompt }] }] };
 
