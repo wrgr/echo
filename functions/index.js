@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 // Node.js standard imports
 const https = require('https');
 const { Buffer } = require('buffer');
@@ -957,4 +955,4 @@ exports.echoSimulator = onRequest({ cors: true, secrets: [GEMINI_API_KEY] }, asy
     }
   });
 });
->>>>>>> parent of 23fbeba (bug fix)
+
