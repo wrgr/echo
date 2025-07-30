@@ -60,7 +60,7 @@ const styles = {
     },
   },
   icon: {
-    width: "32px", height: "32px", marginRight: "12px", color: "#0d9488", flexShrink: 0,
+    width: "32px", height: "32px", marginRight: "12px", color: "var(--primary-color)", flexShrink: 0,
     "@media (max-width: 768px)": {
       marginRight: "0",
       marginBottom: "5px",
@@ -72,7 +72,7 @@ const styles = {
       textAlign: "center",
     },
   },
-  title: {color: "#15304a", margin: 0, fontSize: "24px", fontWeight: "700",
+  title: {color: "var(--accent-color)", margin: 0, fontSize: "24px", fontWeight: "700",
     "@media (max-width: 768px)": {
       fontSize: "20px",
     },
@@ -99,7 +99,7 @@ const styles = {
   },
   navLink: {
     textDecoration: "none",
-    color: "#0d9488",
+    color: "var(--primary-color)",
     fontWeight: "bold",
     fontSize: "1.1em",
     padding: "5px 10px",
@@ -112,7 +112,7 @@ const styles = {
       fontSize: "1em",
       padding: "10px",
       textAlign: "center",
-      border: "1px solid #0d9488",
+      border: "1px solid var(--primary-color)",
     },
   },
 };
