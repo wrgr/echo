@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECHO Simulator Help - Project ECHO</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        /* Navigation */
+        nav {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 0;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: #667eea;
+        }
+
+        /* Header */
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 140px 0 80px;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .page-header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .page-header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 80px 0;
+        }
+
+        .help-section {
+            margin-bottom: 60px;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-left: 5px solid #667eea;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: white;
+        }
+
+        .section-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #4a5568;
+        }
+
+        .intro-text {
+            background: #f8fafc;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+        }
+
+        /* Steps List */
+        .steps-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .step-item {
+            background: #f8fafc;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .step-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .step-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .step-number {
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .step-description {
+            color: #4a5568;
+            line-height: 1.7;
+            margin-bottom: 15px;
+        }
+
+        /* Nested Lists */
+        .phases-list {
+            list-style: none;
+            padding-left: 20px;
+            margin: 15px 0;
+        }
+
+        .phase-item {
+            background: white;
+            padding: 12px 20px;
+            margin-bottom: 8px;
+            border-radius: 10px;
+            border-left: 3px solid #90cdf4;
+            font-weight: 500;
+            color: #2d3748;
+        }
+
+        .helper-buttons {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+
+        .button-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .button-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            padding: 15px 0;
+            border-bottom: 1px solid #eef2f7;
+        }
+
+        .button-item:last-child {
+            border-bottom: none;
+        }
+
+        .button-icon {
+            width: 35px;
+            height: 35px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .button-info {
+            flex-grow: 1;
+        }
+
+        .button-name {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .button-desc {
+            color: #64748b;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        /* Scoring Section */
+        .scoring-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 25px;
+        }
+
+        .scoring-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border-left: 4px solid #667eea;
+        }
+
+        .scoring-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+
+        .scoring-desc {
+            color: #64748b;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* Call to Action */
+        .cta-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 40px;
+            border-radius: 20px;
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        .cta-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .cta-text {
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 15px 35px;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: 2px solid rgba(255,255,255,0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .cta-button:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        /* Footer */
+        footer {
+            background: #1a202c;
+            color: white;
+            padding: 60px 0 30px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer-section h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #90cdf4;
+        }
+
+        .footer-section p, .footer-section a {
+            color: #a0aec0;
+            line-height: 1.6;
+            text-decoration: none;
+        }
+
+        .footer-section a:hover {
+            color: white;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid #2d3748;
+            padding-top: 30px;
+            text-align: center;
+            color: #718096;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .page-header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .help-section {
+                padding: 25px;
+                margin-bottom: 30px;
+            }
+            
+            .section-title {
+                font-size: 1.5rem;
+            }
+            
+            .step-item {
+                padding: 20px;
+            }
+            
+            .step-title {
+                font-size: 1.1rem;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            
+            .scoring-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .cta-section {
+                padding: 40px 20px;
+            }
+            
+            .cta-title {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .nav-links {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .button-item {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .phases-list {
+                padding-left: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <div class="logo">Project ECHO</div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="reference.html">Reference</a></li>
+                <li><a href="https://clinical-lep-simulator.web.app/" target="_blank">Try Simulator</a></li>
+                <li><a href="simulator-help.html" class="active">Simulator Help</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <section class="page-header">
+        <div class="container">
+            <h1>ECHO Simulator Help</h1>
+            <p>Complete guide to using your clinical communication training simulator</p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <section class="main-content">
+        <div class="container">
+            <!-- Introduction -->
+            <div class="help-section">
+                <h2 class="section-title">
+                    <div class="section-icon">🎯</div>
+                    Welcome to ECHO: Your Clinical Communication Simulator!
+                </h2>
+                <div class="intro-text">
+                    <p><strong>ECHO (Effective Conversations for Healthcare Optimization)</strong> is designed to help you practice and refine your patient communication and clinical reasoning skills, especially with patients who may have Limited English Proficiency (LEP) or diverse cultural backgrounds.</p>
+                </div>
+                <div class="section-content">
+                    <p>This AI-powered simulator provides realistic patient encounters where you can practice culturally responsive communication, receive real-time feedback, and improve your skills in a safe, educational environment. Our platform is grounded in evidence-based research and follows the Patient-Centered/Biopsychosocial model of care.</p>
+                </div>
+            </div>
+
+            <!-- How to Use -->
+            <div class="help-section">
+                <h2 class="section-title">
+                    <div class="section-icon">📖</div>
+                    How to Use the Simulator
+                </h2>
+                <ol class="steps-list">
+                    <li class="step-item">
+                        <h3 class="step-title">
+                            <div class="step-number">1</div>
+                            Start a Scenario
+                        </h3>
+                        <p class="step-description">Click <strong>"Generate New Patient"</strong> to get a dynamically created patient profile, or select from the <strong>"Load Predefined Patient"</strong> dropdown. A default patient is loaded automatically when you start the app.</p>
+                    </li>
+
+                    <li class="step-item">
+                        <h3 class="step-title">
+                            <div class="step-number">2</div>
+                            Engage in Conversation
+                        </h3>
+                        <p class="step-description">Read the coach's introduction message in the chat window. Type your responses in the input box and press Enter or click "Send". Messages will be clearly labeled:</p>
+                        <ul style="margin-top: 10px; margin-left: 20px;">
+                            <li><strong>Coach</strong> - Provides guidance and feedback</li>
+                            <li><strong>Provider</strong> - Your messages and responses</li>
+                            <li><strong>Patient</strong> - The standardized patient's responses</li>
+                        </ul>
+                    </li>
+
+                    <li class="step-item">
+                        <h3 class="step-title">
+                            <div class="step-number">3</div>
+                            Navigate Encounter Phases
+                        </h3>
+                        <p class="step-description">The clinical encounter is broken down into 5 phases, mirroring the Patient-Centered/Biopsychosocial Model:</p>
+                        <ul class="phases-list">
+                            <li class="phase-item">Initiation & Building the Relationship</li>
+                            <li class="phase-item">Information Gathering & History Taking</li>
+                            <li class="phase-item">Physical Examination</li>
+                            <li class="phase-item">Assessment & Plan / Shared Decision-Making</li>
+                            <li class="phase-item">Closure</li>
+                        </ul>
+                        <p class="step-description">The coach will introduce each new phase and provide its goals.</p>
+                    </li>
+
+                    <li class="step-item">
+                        <h3 class="step-title">
+                            <div class="step-number">4</div>
+                            Receive Feedback & Scoring
+                        </h3>
+                        <p class="step-description">After each meaningful interaction, the simulator will assess your performance. The <strong>Rubric Scorecard</strong> (at the bottom) will show points for five key areas. Each category is worth 1 point per phase, with detailed justifications explaining the scoring.</p>
+                        
+                        <div class="scoring-grid">
+                            <div class="scoring-card">
+                                <h4 class="scoring-title">Communication</h4>
+                                <p class="scoring-desc">Clear, appropriate language, active listening, and effective questioning techniques</p>
+                            </div>
+                            <div class="scoring-card">
+                                <h4 class="scoring-title">Trust & Rapport</h4>
+                                <p class="scoring-desc">Empathetic connection, trust building, and emotional management</p>
+                            </div>
+                            <div class="scoring-card">
+                                <h4 class="scoring-title">Accuracy</h4>
+                                <p class="scoring-desc">Clinically relevant questions and precise information gathering</p>
+                            </div>
+                            <div class="scoring-card">
+                                <h4 class="scoring-title">Cultural Humility</h4>
+                                <p class="scoring-desc">Respectful exploration of cultural context and patient beliefs</p>
+                            </div>
+                            <div class="scoring-card">
+                                <h4 class="scoring-title">Shared Understanding</h4>
+                                <p class="scoring-desc">Patient comprehension, involvement in decisions, and teach-back techniques</p>
+                            </div>
+                        </div>
+                    </li>
+
+                    <li class="step-item">
+                        <h3 class="step-title">
+                            <div class="step-number">5</div>
+                            Use Helper Buttons
+                        </h3>
+                        <p class="step-description">Take advantage of these powerful learning tools:</p>
+                        
+                        <div class="helper-buttons">
+                            <ul class="button-list">
+                                <li class="button-item">
+                                    <div class="button-icon">💡</div>
+                                    <div class="button-info">
+                                        <div class="button-name">Coach Tip</div>
+                                        <div class="button-desc">Get a coach's tip based on your actions so far, providing context and guidance for the current phase.</div>
+                                    </div>
+                                </li>
+                                <li class="button-item">
+                                    <div class="button-icon">✅</div>
+                                    <div class="button-info">
+                                        <div class="button-name">Inject Good Response</div>
+                                        <div class="button-desc">See an AI-generated ideal provider response and learn from best practices.</div>
+                                    </div>
+                                </li>
+                                <li class="button-item">
+                                    <div class="button-icon">❌</div>
+                                    <div class="button-info">
+                                        <div class="button-name">Inject Poor Response</div>
+                                        <div class="button-desc">Observe a less-than-ideal response and understand its negative impact.</div>
+                                    </div>
+                                </li>
+                                <li class="button-item">
+                                    <div class="button-icon">⏭️</div>
+                                    <div class="button-info">
+                                        <div class="button-name">Move to Next Phase</div>
+                                        <div class="button-desc">Manually advance the scenario if you feel stuck or have completed the current phase.</div>
+                                    </div>
+                                </li>
+                                <li class="button-item">
+                                    <div class="button-icon">📄</div>
+                                    <div class="button-info">
+                                        <div class="button-name">Download Transcript</div>
+                                        <div class="button-desc">At the end of the encounter, download the full conversation history and score summary.</div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <li class="step-item">
+                        <h3 class="step-title">
+                            <div class="step-number">6</div>
+                            Complete the Encounter
+                        </h3>
+                        <p class="step-description">The encounter ends after the Closure phase. Your final total score and comprehensive overall feedback will be displayed, summarizing your performance and providing actionable insights for improvement.</p>
+                    </li>
+                </ol>
+            </div>
+
+            <!-- Key Principles -->
+            <div class="help-section">
+                <h2 class="section-title">
+                    <div class="section-icon">🌟</div>
+                    Key Success Principles
+                </h2>
+                <div class="section-content">
+                    <div class="scoring-grid">
+                        <div class="scoring-card">
+                            <h4 class="scoring-title">Clear Communication</h4>
+                            <p class="scoring-desc">Use simple, jargon-free language. Speak at an appropriate pace and check for understanding frequently.</p>
+                        </div>
+                        <div class="scoring-card">
+                            <h4 class="scoring-title">Active Listening</h4>
+                            <p class="scoring-desc">Pay attention to both verbal and non-verbal cues. Reflect back what you hear to confirm understanding.</p>
+                        </div>
+                        <div class="scoring-card">
+                            <h4 class="scoring-title">Cultural Integration</h4>
+                            <p class="scoring-desc">Acknowledge and integrate the patient's unique cultural background into your approach and treatment planning.</p>
+                        </div>
+                        <div class="scoring-card">
+                            <h4 class="scoring-title">Patient Partnership</h4>
+                            <p class="scoring-desc">Involve patients in decision-making and ensure they understand their role in their care plan.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Call to Action -->
+            <div class="cta-section">
+                <h2 class="cta-title">Ready to Start Training?</h2>
+                <p class="cta-text">Begin your journey toward more effective, culturally responsive patient communication.</p>
+                <a href="https://clinical-lep-simulator.web.app/" class="cta-button" target="_blank">Launch ECHO Simulator</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Project ECHO</h3>
+                    <p>Breaking down communication barriers in healthcare through AI-powered simulation. "Because hearing is not listening." - Empowering culturally responsive care for all patients.</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Quick Links</h3>
+                    <p><a href="index.html">Home</a></p>
+                    <p><a href="about.html">About Us</a></p>
+                    <p><a href="reference.html">Reference</a></p>
+                    <p><a href="https://clinical-lep-simulator.web.app/" target="_blank">Try Simulator</a></p>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Research Team</h3>
+                    <p>Johns Hopkins School of Medicine</p>
+                    <p>Johns Hopkins Applied Physics Laboratory</p>
+                    <p>Dana Foundation Support</p>
+                    <p>Collaborative Research Initiative</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Contact Info</h3>
+                    <p>Email: wgr@jhu.edu</p>
+                    <p>Lead: Charbel Maroun</p>
+                    <p>charbel.maroun0702@gmail.com</p>
+                    <p>Johns Hopkins University</p>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2025 Project ECHO - Johns Hopkins School of Medicine & Applied Physics Laboratory. All rights reserved. | Privacy Policy | Terms of Service</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
