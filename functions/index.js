@@ -12,7 +12,6 @@ const { setGlobalOptions } = require('firebase-functions/v2');
 const { defineSecret } = require('firebase-functions/params'); // <--- THIS IS THE CHANGE
 
 // Third-party middleware
-const cors = require('cors')({ origin: true });
 
 // --- Firebase Admin SDK Initialization ---
 admin.initializeApp();
@@ -719,18 +718,11 @@ async function handleInteraction(req, res, geminiApiSecret) {
  * @param {object} res - The Express response object.
  */
 exports.echoSimulator = onRequest({ cors: true, secrets: [GEMINI_API_KEY] }, async (req, res) => {
-  // Handle preflight requests for CORS
-  if (req.method === 'OPTIONS') {
-    return cors(req, res, () => res.status(204).send(''));
+  if (req.method !== 'POST') {
+    return res.status(405).send('Method Not Allowed');
   }
 
-  // Apply CORS middleware for actual requests
-  cors(req, res, async () => {
-    if (req.method !== 'POST') {
-      return res.status(405).send('Method Not Allowed');
-    }
-
-    try {
+  try {
       // The secret value is now accessed via GEMINI_API_KEY.value()
       // The `secrets: [GEMINI_API_KEY]` in onRequest ensures it's loaded.
       // We don't need a direct `if (!GEMINI_API_KEY)` check here like before,
@@ -769,6 +761,5 @@ exports.echoSimulator = onRequest({ cors: true, secrets: [GEMINI_API_KEY] }, asy
       console.error('echoSimulator: Error processing request:', error);
       res.status(500).send('An internal server error occurred: ' + error.message);
     }
-  });
 });
 
