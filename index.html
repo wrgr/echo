@@ -99,6 +99,21 @@
             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
         }
 
+        .cta-links {
+            margin-top: 15px;
+            font-size: 1rem;
+        }
+
+        .cta-links a {
+            color: #fff;
+            text-decoration: underline;
+            margin: 0 5px;
+        }
+
+        .cta-links a:hover {
+            color: #e2e8f0;
+        }
+
         /* Navigation */
         nav {
             background: rgba(255,255,255,0.95);
@@ -311,6 +326,9 @@
                 <li><a href="index.html">Home</a></li>
                 <li><a href="about.html">About</a></li>
                 <li><a href="references.html">References</a></li>
+                <li><a href="simulator.html">Simulator</a></li>
+                <li><a href="clinical-help.html">Clinical Question</a></li>
+                <li><a href="patient-intake.html">Patient Intake</a></li>
                 <li><a href="simulator-help.html">Simulator Help</a></li>
                 <li><a href="#contact">Contact</a></li>
             </ul>
@@ -322,7 +340,13 @@
         <div class="hero-content">
             <h1>Project ECHO</h1>
             <div style="font-size: 1.6rem; font-weight: 600; margin: 25px 0; color: #f0f8ff; font-style: italic;">"Because hearing is not listening."</div>
-            <a href="https://clinical-lep-simulator.web.app/" class="cta-button" target="_blank">Try the Simulator</a>
+            <div class="cta-buttons">
+                <a href="https://clinical-lep-simulator.web.app/" class="cta-button" target="_blank">Try the Simulator</a>
+                <div class="cta-links">
+                    <a href="clinical-help.html">Clinical Question</a> |
+                    <a href="patient-intake.html">Patient Intake</a>
+                </div>
+            </div>
         </div>
     </section>
 
