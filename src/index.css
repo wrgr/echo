@@ -812,12 +812,13 @@ html, body {
 /* Patient Info Panel */
 .patient-info-panel {
   background: white;
-  width: 400px;
+  width: 100%;
+  max-width: 900px;
+  margin: var(--spacing-xl) auto 0;
   border-radius: var(--radius-xl);
   padding: var(--spacing-xl);
   box-shadow: 0 4px 20px var(--shadow-color);
   border: 1px solid var(--border-color);
-  overflow-y: auto;
 }
 
 .patient-info-title {
@@ -852,6 +853,27 @@ html, body {
   font-weight: 600;
   color: var(--text-color);
   margin-right: var(--spacing-sm);
+}
+
+.patient-preview-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-lg);
+}
+
+.patient-preview-item {
+  flex: 1 1 250px;
+  background: var(--secondary-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+}
+
+.patient-preview-item .patient-info-label {
+  margin-right: 0;
+  margin-bottom: var(--spacing-xs);
 }
 
 /* ========================================================================== */

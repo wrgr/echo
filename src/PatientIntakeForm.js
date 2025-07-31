@@ -777,55 +777,60 @@ function PatientIntakeForm() {
           {generatedPatient ? (
             <div>
               <h3 className="patient-info-title">Generated Patient</h3>
-              
-              {/* Patient Summary Display */}
-              <div className="patient-info-detail">
-                <span className="patient-info-label">Name:</span>
-                {generatedPatient.name}
-              </div>
-              
-              <div className="patient-info-detail">
-                <span className="patient-info-label">Age:</span>
-                {generatedPatient.age}
-              </div>
-              
-              <div className="patient-info-detail">
-                <span className="patient-info-label">Gender:</span>
-                {generatedPatient.genderIdentity} ({generatedPatient.pronouns})
-              </div>
-              
-              <div className="patient-info-detail">
-                <span className="patient-info-label">Main Complaint:</span>
-                {generatedPatient.mainComplaint}
-              </div>
-              
-              {generatedPatient.secondaryComplaint && (
-                <div className="patient-info-detail">
-                  <span className="patient-info-label">Secondary Complaint:</span>
-                  {generatedPatient.secondaryComplaint}
+
+              <div className="patient-preview-grid">
+                <div className="patient-preview-item">
+                  <span className="patient-info-label">Name</span>
+                  <span>{generatedPatient.name}</span>
                 </div>
-              )}
-              
-              <div className="patient-info-detail">
-                <span className="patient-info-label">Language:</span>
-                {generatedPatient.nativeLanguage} ({generatedPatient.englishProficiency} English)
+
+                <div className="patient-preview-item">
+                  <span className="patient-info-label">Age</span>
+                  <span>{generatedPatient.age}</span>
+                </div>
+
+                <div className="patient-preview-item">
+                  <span className="patient-info-label">Gender</span>
+                  <span>
+                    {generatedPatient.genderIdentity} ({generatedPatient.pronouns})
+                  </span>
+                </div>
+
+                <div className="patient-preview-item">
+                  <span className="patient-info-label">Main Complaint</span>
+                  <span>{generatedPatient.mainComplaint}</span>
+                </div>
+
+                {generatedPatient.secondaryComplaint && (
+                  <div className="patient-preview-item">
+                    <span className="patient-info-label">Secondary Complaint</span>
+                    <span>{generatedPatient.secondaryComplaint}</span>
+                  </div>
+                )}
+
+                <div className="patient-preview-item">
+                  <span className="patient-info-label">Language</span>
+                  <span>
+                    {generatedPatient.nativeLanguage} ({generatedPatient.englishProficiency} English)
+                  </span>
+                </div>
+
+                <div className="patient-preview-item">
+                  <span className="patient-info-label">Cultural Background</span>
+                  <span>{generatedPatient.culturalBackground}</span>
+                </div>
+
+                <div className="patient-preview-item">
+                  <span className="patient-info-label">Diagnosis</span>
+                  <span>{generatedPatient.correctDiagnosis}</span>
+                </div>
+
+                <div className="patient-preview-item">
+                  <span className="patient-info-label">Persona</span>
+                  <span>{generatedPatient.patientPersona}</span>
+                </div>
               </div>
-              
-              <div className="patient-info-detail">
-                <span className="patient-info-label">Cultural Background:</span>
-                {generatedPatient.culturalBackground}
-              </div>
-              
-              <div className="patient-info-detail">
-                <span className="patient-info-label">Diagnosis:</span>
-                {generatedPatient.correctDiagnosis}
-              </div>
-              
-              <div className="patient-info-detail">
-                <span className="patient-info-label">Persona:</span>
-                {generatedPatient.patientPersona}
-              </div>
-              
+
               {/* Export button */}
               <button
                 className="control-button mt-10"
@@ -833,7 +838,7 @@ function PatientIntakeForm() {
               >
                 Download JSON
               </button>
-              
+
               {/* Usage instructions */}
               <p className="loading-message small-text mt-15">
                 This patient has been saved locally and will appear as "User: {generatedPatient.name}" in the simulation page dropdown.
