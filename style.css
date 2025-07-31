@@ -1,0 +1,74 @@
+:root {
+  --primary: #005f73;
+  --secondary: #0a9396;
+  --light: #e9f5f5;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  background: var(--light);
+  color: #333;
+}
+
+nav {
+  background: var(--primary);
+}
+
+.main-nav {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+}
+
+.main-nav li {
+  position: relative;
+}
+
+.main-nav a {
+  color: #fff;
+  text-decoration: none;
+  padding: 1rem 1.25rem;
+  display: block;
+}
+
+.main-nav li:hover > a {
+  background: var(--secondary);
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background: var(--secondary);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-width: 200px;
+  z-index: 1000;
+}
+
+.dropdown-content li a {
+  padding: 0.75rem 1rem;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+.hero {
+  padding: 4rem 2rem;
+  background: #fff;
+  text-align: center;
+}
+
+main {
+  padding: 2rem;
+}
+
+footer {
+  background: var(--primary);
+  color: #fff;
+  text-align: center;
+  padding: 1rem;
+}
