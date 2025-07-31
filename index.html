@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project ECHO - Effective Conversations for Healthcare Optimization</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/style.css">
     <link rel="icon" href="favicon.ico">
     <style>
         * {
@@ -55,13 +55,19 @@
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
 
-        .hero p {
-            font-size: 1.3rem;
-            margin-bottom: 30px;
-            opacity: 0.95;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
+        .hero-logo {
+            max-width: 200px;
+            margin-bottom: 20px;
+        }
+
+        .description-card {
+            background: #fff;
+            max-width: 800px;
+            margin: -40px auto 60px;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
         }
 
         .cta-button {
@@ -100,14 +106,8 @@
             margin: 0 auto;
             padding: 0 20px;
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #667eea;
         }
 
         .nav-links {
@@ -297,11 +297,11 @@
     <!-- Navigation -->
     <nav>
         <div class="nav-container">
-            <div class="logo"><img src="echo-logo.jpg" alt="Project ECHO logo" class="logo-image"></div>
             <ul class="nav-links">
                 <li><a href="index.html">Home</a></li>
                 <li><a href="about.html">About</a></li>
                 <li><a href="references.html">References</a></li>
+                <li><a href="simulator-help.html">Simulator Help</a></li>
                 <li><a href="#contact">Contact</a></li>
             </ul>
         </div>
@@ -310,11 +310,15 @@
     <!-- Hero Section -->
     <section class="hero">
         <div class="hero-content">
+            <img src="echo-logo.jpg" alt="Project ECHO logo" class="hero-logo">
             <h1>Project ECHO</h1>
             <div style="font-size: 1.6rem; font-weight: 600; margin: 25px 0; color: #f0f8ff; font-style: italic;">"Because hearing is not listening."</div>
-            <p>Effective Conversations for Healthcare Optimization. Breaking down communication barriers between clinicians and Limited English Proficiency (LEP) patients through AI-powered simulation and training.</p>
             <a href="https://clinical-lep-simulator.web.app/" class="cta-button" target="_blank">Try the Simulator</a>
         </div>
+    </section>
+
+    <section class="description-card">
+        <p>Effective Conversations for Healthcare Optimization. Breaking down communication barriers between clinicians and Limited English Proficiency (LEP) patients through AI-powered simulation and training.</p>
     </section>
 
     <!-- Features Section -->
