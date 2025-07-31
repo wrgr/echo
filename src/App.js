@@ -1,6 +1,5 @@
 import React from "react";
 import { Routes, Route, Link } from "react-router-dom";
-import './index.css';
 
 // Import all ECHO application components
 import SimulationPage from "./SimulationPage";

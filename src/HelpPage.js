@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import './index.css';
 
 /**
  * ECHO Help Page Component
