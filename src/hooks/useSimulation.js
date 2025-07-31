@@ -195,12 +195,12 @@ export const useSimulation = () => {
     return Math.min(100, (currentProgress / totalPhases) * 100);
   };
 
-  const getScoreColor = (score, maxScore) => {
-    if (maxScore === 0) return '#64748b';
+  const getScoreClass = (score, maxScore) => {
+    if (maxScore === 0) return 'score-neutral';
     const percentage = (score / maxScore) * 100;
-    if (percentage >= 80) return '#059669';
-    if (percentage >= 60) return '#d97706';
-    return '#dc2626';
+    if (percentage >= 80) return 'score-good';
+    if (percentage >= 60) return 'score-average';
+    return 'score-poor';
   };
 
   const downloadTranscript = () => {
@@ -286,7 +286,7 @@ export const useSimulation = () => {
     handleInjectProviderResponse,
     handleMoveToNextPhase,
     getProgressPercentage,
-    getScoreColor,
+    getScoreClass,
     downloadTranscript,
   };
 };
