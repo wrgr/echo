@@ -22,11 +22,14 @@ function App() {
 
       <nav className="nav-container">
         <Link to="/simulation" className="nav-link">Simulation</Link>
+        <Link to="/patient-intake" className="nav-link">Patient Intake</Link>
         <Link to="/help" className="nav-link">Help & Advice</Link>
+
       </nav>
 
       <Routes>
         <Route path="/simulation" element={<SimulationPage />} />
+        <Route path="/patient-intake" element={<PatientIntakeForm />} /> // 2. Add the new route
         <Route path="/help" element={<HelpPage />} />
         <Route path="/" element={<SimulationPage />} />
       </Routes>
