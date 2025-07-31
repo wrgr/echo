@@ -61,6 +61,7 @@ body {
   background-color: var(--light-background);
   text-align: center;
   flex-shrink: 0;
+  font-family: 'Inter', 'Roboto', sans-serif;
 }
 
 .header-content {
@@ -86,14 +87,14 @@ body {
   color: var(--accent-color);
   margin: 0;
   font-size: 24px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .subtitle {
   color: #64748b;
   margin: 4px 0 0 0;
   font-size: 12px;
-  font-weight: 400;
+  font-weight: 300;
 }
 
 /* Navigation styles */
