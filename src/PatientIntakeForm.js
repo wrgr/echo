@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import './index.css';
 
 // Import existing patient data files
 import predefinedPatients from './patients/predefinedPatients.json';

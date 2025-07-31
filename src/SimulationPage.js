@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from "react";
 import predefinedPatients from "./patients/predefinedPatients.json";
-import "./index.css";
 import { ENCOUNTER_PHASES_CLIENT, PHASE_RUBRIC_DEFINITIONS } from "./utils/constants";
 import { useSimulation } from "./hooks/useSimulation";
 
