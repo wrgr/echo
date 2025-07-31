@@ -265,7 +265,7 @@ html, body {
 .help-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
   padding: var(--spacing-xl);
   overflow-y: auto;
 }
