@@ -404,7 +404,7 @@ function SimulationPage() {
 
   const chatWindowRef = useRef(null);
 
-  const functionUrl = "https://us-central1-clinical-lep-simulator.cloudfunctions.net/echoSimulator"; // Updated function URL
+  const functionUrl = "https://us-central1-echo-d825e.cloudfunctions.net/echoSimulator "; // Updated function URL
 
   // --- API Interaction Functions (moved to top and wrapped in useCallback) ---
 

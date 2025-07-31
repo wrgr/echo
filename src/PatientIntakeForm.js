@@ -304,7 +304,7 @@ function PatientIntakeForm() {
     familyInvolvementPreference: ''
   });
 
-  const functionUrl = "https://us-central1-clinical-lep-simulator.cloudfunctions.net/echoSimulator";
+  const functionUrl = "https://us-central1-echo-d825e.cloudfunctions.net/echoSimulator";
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import './index.css';
 
 function HelpPage() {
   const [patientInfo, setPatientInfo] = useState('');
@@ -8,7 +9,7 @@ function HelpPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const functionUrl = "https://us-central1-clinical-lep-simulator.cloudfunctions.net/echoSimulator";
+  const functionUrl = "https://us-central1-echo-d825e.cloudfunctions.net/echoSimulator";
 
   const handleSubmitAdvice = async () => {
     setError(null);
