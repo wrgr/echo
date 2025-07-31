@@ -3,7 +3,9 @@ import { Routes, Route, Link } from "react-router-dom";
 import './index.css';
 import SimulationPage from "./SimulationPage";
 import HelpPage from "./HelpPage";
-import PatientIntakeForm from "./PatientIntakeForm"
+import PatientIntakeForm from "./PatientIntakeForm";
+import ClinicalQuestionPage from "./ClinicalQuestionPage";
+import HomePage from "./HomePage";
 
 function App() {
   return (
@@ -21,14 +23,18 @@ function App() {
       </header>
 
       <nav className="nav-container">
-        <Link to="/simulation" className="nav-link">Simulation</Link>
+        <Link to="/simulation" className="nav-link">Simulator</Link>
+        <Link to="/clinical-question" className="nav-link">Clinical Question</Link>
+        <Link to="/patient-intake" className="nav-link">Patient Intake</Link>
         <Link to="/help" className="nav-link">Help & Advice</Link>
       </nav>
 
       <Routes>
         <Route path="/simulation" element={<SimulationPage />} />
+        <Route path="/clinical-question" element={<ClinicalQuestionPage />} />
+        <Route path="/patient-intake" element={<PatientIntakeForm />} />
         <Route path="/help" element={<HelpPage />} />
-        <Route path="/" element={<SimulationPage />} />
+        <Route path="/" element={<HomePage />} />
       </Routes>
     </div>
   );
