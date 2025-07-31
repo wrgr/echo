@@ -28,7 +28,6 @@ function SimulationPage() {
 
   const {
     messages,
-    conversationHistoryForAPI,
     patientState,
     inputValue,
     isLoading,
@@ -45,11 +44,7 @@ function SimulationPage() {
     setShowFullPatientInfo,
     setShowScoringModal,
     setShowCoachPanel,
-    setSelectedPatientIndex,
-    resetSimulation,
-    loadPatient,
     handlePredefinedPatientChange,
-    sendInteractionToServer,
     handleSendMessage,
     handleCoachTipRequest,
     handleInjectProviderResponse,
