@@ -73,6 +73,28 @@
             height: auto;
         }
 
+        .quote-card {
+            background: #fff;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .quote-card blockquote {
+            font-size: 1.3rem;
+            font-style: italic;
+            margin-bottom: 15px;
+        }
+
+        .quote-card cite {
+            display: block;
+            font-size: 1rem;
+            color: #555;
+        }
+
         @media (max-width: 600px) {
             .description-card {
                 flex-direction: column;
@@ -334,6 +356,13 @@
     <section class="description-card">
         <img src="echo-logo.jpg" alt="Project ECHO logo" class="description-logo">
         <p>Effective Conversations for Healthcare Optimization. Breaking down communication barriers between clinicians and Limited English Proficiency (LEP) patients through AI-powered simulation and training.</p>
+    </section>
+
+    <section class="quote-card">
+        <blockquote>
+            The reason why we have two ears and only one mouth is that we may listen more and talk less.
+        </blockquote>
+        <cite>&mdash; Zeno of Citium, c. 300 BC</cite>
     </section>
 
     <!-- Features Section -->
