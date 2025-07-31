@@ -1,6 +1,6 @@
 # ECHO – Empowering Conversations for better Healthcare Outcomes
 
-ECHO is an AI-powered clinical simulation platform that helps healthcare providers practice culturally responsive patient communication. The application combines a React front-end with Firebase Cloud Functions that call Google Gemini to generate virtual patients, manage conversations and provide real-time coaching.
+ECHO is an AI-powered clinical simulation platform that helps healthcare providers practice culturally responsive patient communication. The application combines a React front-end with Firebase Cloud Functions that call Google Gemini to generate virtual patients, manage conversations and provide real-time coaching.  This release is a fully working baseline v0.4.
 
 ## Features
 
