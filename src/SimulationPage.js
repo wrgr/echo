@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import predefinedPatients from "./predefinedPatients.json";
 import { useUserPatients } from './hooks/useUserPatients';
+import './index.css';
 
 // --- Media Query Constants ---
 const mobileBreakpoint = "(max-width: 768px)";
