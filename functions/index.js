@@ -255,9 +255,7 @@ async function getPhaseScoreFromGemini(geminiApiSecret, patientState, conversati
     phaseDescription,
     patientState: JSON.stringify(patientState, null, 2),
     conversationHistory: JSON.stringify(conversationHistory, null, 2),
-    rubricText: Object.entries(PHASE_RUBRIC)
-      .map(([key, value]) => `- ${key} (${value.max} pt): ${value.desc}`)
-      .join('\n'),
+    PHASE_RUBRIC,
   });
 
   const postData = JSON.stringify({
@@ -362,6 +360,7 @@ async function getGeminiResponseForInteraction(
     patientState,
     formattedHistoryForGemini,
     fidelityInstruction,
+    PHASE_RUBRIC,
   });
 
   const postData = JSON.stringify({
@@ -408,6 +407,7 @@ async function generateInjectedProviderResponse(
     phaseName,
     phaseGoalDescription,
     responseType,
+    PHASE_RUBRIC,
   });
 
   const postData = JSON.stringify({
