@@ -10,8 +10,8 @@ import PatientIntakeForm from "./PatientIntakeForm";
  * ECHO Application Root Component
  * 
  * This is the main application component that provides the overall structure,
- * navigation, and routing for the ECHO (Empowering Conversations for better 
- * Healthcare Outcomes) clinical simulation platform.
+ * navigation, and routing for the ECHO (Effective Conversations for Healthcare
+ * Optimization) clinical simulation platform.
  * 
  * ECHO System Overview:
  * ECHO is an AI-powered clinical simulation platform designed to help healthcare
@@ -112,7 +112,7 @@ function App() {
             <div className="title-container">
               <h1 className="title">ECHO</h1>
               <h2 className="subtitle">
-                (Empowering Conversations for better Healthcare Outcomes)
+                (Effective Conversations for Healthcare Optimization)
               </h2>
             </div>
           </div>
@@ -200,41 +200,32 @@ function App() {
       </main>
 
       {/* ============================================================ */}
-      {/* APPLICATION FOOTER (OPTIONAL) */}
+      {/* APPLICATION FOOTER */}
       {/* ============================================================ */}
-      {/* 
-      Footer section could include:
-      - Copyright information
-      - Links to documentation
-      - Contact information
-      - Version information
-      - Privacy policy links
-      - Accessibility statement
-      */}
-      
-      {/* 
       <footer className="app-footer">
         <div className="footer-content">
           <div className="footer-section">
             <h4>About ECHO</h4>
-            <p>ECHO is a clinical simulation platform designed to improve healthcare communication through AI-powered patient interactions.</p>
+            <p>
+              ECHO (Effective Conversations for Healthcare Optimization) is a
+              clinical simulation platform designed to improve healthcare
+              communication through AI-powered patient interactions.
+            </p>
           </div>
-          
+
           <div className="footer-section">
-            <h4>Support</h4>
+            <h4>Resources</h4>
             <ul>
               <li><a href="/docs">Documentation</a></li>
-              <li><a href="/contact">Contact Support</a></li>
               <li><a href="/accessibility">Accessibility</a></li>
             </ul>
           </div>
-          
+
           <div className="footer-section">
             <p>&copy; 2024 ECHO Platform. All rights reserved.</p>
           </div>
         </div>
       </footer>
-      */}
     </div>
   );
 }
