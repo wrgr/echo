@@ -5,320 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>References - Project ECHO</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="index.css">
     <link rel="icon" href="favicon.ico">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-        }
-
-        /* Navigation */
-        nav {
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(10px);
-            padding: 15px 0;
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 1000;
-            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
-        }
-
-        .nav-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #667eea;
-        }
-
-        .nav-links {
-            display: flex;
-            list-style: none;
-            gap: 30px;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: #333;
-            font-weight: 500;
-            transition: color 0.3s ease;
-        }
-
-        .nav-links a:hover, .nav-links a.active {
-            color: #667eea;
-        }
-
-        /* Header */
-        .page-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 140px 0 80px;
-            text-align: center;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
-        .page-header h1 {
-            font-size: 3rem;
-            font-weight: 700;
-            margin-bottom: 20px;
-        }
-
-        .page-header p {
-            font-size: 1.2rem;
-            opacity: 0.9;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        /* Main Content */
-        .main-content {
-            padding: 80px 0;
-        }
-
-        .section {
-            margin-bottom: 80px;
-        }
-
-        .section-title {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 30px;
-            color: #2d3748;
-            text-align: center;
-        }
-
-        .subsection-title {
-            font-size: 1.8rem;
-            font-weight: 600;
-            margin: 40px 0 25px;
-            color: #4a5568;
-            border-left: 4px solid #667eea;
-            padding-left: 20px;
-        }
-
-        /* Reference Cards */
-        .reference-grid {
-            display: grid;
-            gap: 30px;
-            margin-top: 40px;
-        }
-
-        .reference-card {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            border-left: 5px solid #667eea;
-            transition: all 0.3s ease;
-        }
-
-        .reference-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
-        }
-
-        .reference-authors {
-            font-weight: 600;
-            color: #2d3748;
-            margin-bottom: 8px;
-            font-size: 1.05rem;
-        }
-
-        .reference-title {
-            font-size: 1.1rem;
-            color: #4a5568;
-            margin-bottom: 8px;
-            font-style: italic;
-        }
-
-        .reference-details {
-            color: #64748b;
-            font-size: 0.95rem;
-            margin-bottom: 10px;
-        }
-
-        .reference-doi {
-            color: #667eea;
-            font-size: 0.9rem;
-            word-break: break-all;
-        }
-
-        .reference-doi a {
-            color: #667eea;
-            text-decoration: none;
-        }
-
-        .reference-doi a:hover {
-            text-decoration: underline;
-        }
-
-        /* Key Findings Section */
-        .key-findings {
-            background: #f8fafc;
-            padding: 80px 0;
-        }
-
-        .findings-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 30px;
-            margin-top: 40px;
-        }
-
-        .finding-card {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-
-        .finding-icon {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            font-size: 2rem;
-            color: white;
-        }
-
-        .finding-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-bottom: 15px;
-            color: #2d3748;
-        }
-
-        .finding-text {
-            color: #64748b;
-            line-height: 1.6;
-        }
-
-        /* Methodology Section */
-        .methodology {
-            padding: 80px 0;
-        }
-
-        .method-steps {
-            display: grid;
-            gap: 30px;
-            margin-top: 40px;
-        }
-
-        .method-step {
-            display: flex;
-            align-items: flex-start;
-            gap: 25px;
-            padding: 30px;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-
-        .step-number {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 700;
-            font-size: 1.2rem;
-            flex-shrink: 0;
-        }
-
-        .step-content h3 {
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: #2d3748;
-        }
-
-        .step-content p {
-            color: #64748b;
-            line-height: 1.6;
-        }
-
-        /* Footer */
-        footer {
-            background: #1a202c;
-            color: white;
-            padding: 60px 0 30px;
-        }
-
-        .footer-content {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 40px;
-            margin-bottom: 40px;
-        }
-
-        .footer-section h3 {
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: #90cdf4;
-        }
-
-        .footer-section p, .footer-section a {
-            color: #a0aec0;
-            line-height: 1.6;
-            text-decoration: none;
-        }
-
-        .footer-section a:hover {
-            color: white;
-        }
-
-        .footer-bottom {
-            border-top: 1px solid #2d3748;
-            padding-top: 30px;
-            text-align: center;
-            color: #718096;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .page-header h1 {
-                font-size: 2.5rem;
-            }
-            
-            .method-step {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .findings-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
 </head>
 <body>
     <!-- Navigation -->
@@ -346,28 +34,68 @@
         </div>
     </section>
 
-    <!-- Key Findings -->
+    <!-- Key Statistics -->
     <section class="key-findings">
         <div class="container">
-            <h2 class="section-title">Key Research Findings</h2>
+            <h2 class="section-title">Evidence-Based Statistics</h2>
+            
+            <div class="findings-grid">
+                <div class="finding-card">
+                    <div class="finding-icon">📊</div>
+                    <h3 class="finding-title">25.7 Million LEP Individuals</h3>
+                    <p class="finding-text">As of 2021, 25.7 million or 8% of people ages five or older living in the United States have limited English proficiency (LEP), representing a significant population requiring culturally responsive healthcare.</p>
+                    <small><strong>Source:</strong> KFF Analysis of 2021 American Community Survey</small>
+                </div>
+                
+                <div class="finding-card">
+                    <div class="finding-icon">⚠️</div>
+                    <h3 class="finding-title">50% Face Language Barriers</h3>
+                    <p class="finding-text">About half of adults with LEP report encountering at least one language barrier in a healthcare setting in the past three years, including difficulty communicating with medical staff and understanding provider instructions.</p>
+                    <small><strong>Source:</strong> KFF Survey on Racism, Discrimination, and Health (2024)</small>
+                </div>
+                
+                <div class="finding-card">
+                    <div class="finding-icon">🏥</div>
+                    <h3 class="finding-title">80% Provider Encounter Rate</h3>
+                    <p class="finding-text">Research shows that 80% of healthcare providers encounter LEP patients throughout the year, with 43% encountering them daily, highlighting the critical need for communication training.</p>
+                    <small><strong>Source:</strong> PMC Analysis of LEP Healthcare Encounters (2018)</small>
+                </div>
+                
+                <div class="finding-card">
+                    <div class="finding-icon">📈</div>
+                    <h3 class="finding-title">Training Shows Promise</h3>
+                    <p class="finding-text">Systematic reviews demonstrate that cultural competence training consistently improves healthcare provider knowledge, attitudes, and skills, with evidence of enhanced patient satisfaction ratings.</p>
+                    <small><strong>Source:</strong> Beach et al., Medical Care (2005); Horvat et al., Cochrane Review (2014)</small>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Key Findings -->
+    <section class="main-content">
+        <div class="container">
+            <h2 class="section-title">Research Impact & Outcomes</h2>
             
             <div class="findings-grid">
                 <div class="finding-card">
                     <div class="finding-icon">🌍</div>
-                    <h3 class="finding-title">LEP Patient Population</h3>
-                    <p class="finding-text">Over 26 million patients in the U.S. have Limited English Proficiency, creating significant communication barriers in healthcare settings that impact quality of care and health outcomes.</p>
+                    <h3 class="finding-title">Health Disparities</h3>
+                    <p class="finding-text">LEP patients are twice as likely to be uninsured compared to English proficient patients (21% vs 10%) and report worse overall health status, with 34% rating their health as "fair" or "poor" compared to 19% of English proficient adults.</p>
+                    <small><strong>Source:</strong> KFF Survey on Racism, Discrimination, and Health (2024); KFF Analysis of LEP Population (2024)</small>
                 </div>
                 
                 <div class="finding-card">
-                    <div class="finding-icon">📚</div>
-                    <h3 class="finding-title">Provider Training Gap</h3>
-                    <p class="finding-text">Most healthcare providers receive minimal training in cultural competency and communication with LEP patients, leading to missed opportunities for effective care delivery.</p>
+                    <div class="finding-icon">⚕️</div>
+                    <h3 class="finding-title">Patient Safety Risk</h3>
+                    <p class="finding-text">Communication problems are the most frequent root cause of serious adverse events. LEP patients face greater risk of medical errors, longer hospital stays, and higher rates of surgical delays and readmissions.</p>
+                    <small><strong>Source:</strong> Joint Commission Sentinel Event Database; Agency for Healthcare Research and Quality (AHRQ) LEP Patient Safety Guide</small>
                 </div>
                 
                 <div class="finding-card">
-                    <div class="finding-icon">🤝</div>
-                    <h3 class="finding-title">Cultural Humility</h3>
-                    <p class="finding-text">Evidence shows that provider cultural humility, empathy, and active listening significantly improve patient trust, satisfaction, and health outcomes across diverse populations.</p>
+                    <div class="finding-icon">🎯</div>
+                    <h3 class="finding-title">Training Effectiveness</h3>
+                    <p class="finding-text">All 14 studies evaluating cultural competence training showed beneficial effects on provider skills and behaviors, with evidence of improved patient satisfaction and provider cultural awareness.</p>
+                    <small><strong>Source:</strong> Beach, M.C. et al., Medical Care (2005); BMC Health Services Research systematic review (2014)</small>
                 </div>
             </div>
         </div>
@@ -414,7 +142,58 @@
         </div>
     </section>
 
-    <!-- References -->
+    <!-- Quantitative Findings -->
+    <section class="main-content">
+        <div class="container">
+            <div class="section">
+                <h2 class="section-title">Key Quantitative Findings</h2>
+                
+                <div class="subsection-title">Communication Barriers & Healthcare Access</div>
+                <div class="reference-grid">
+                    <div class="reference-card">
+                        <div class="reference-title">Language Concordance Impact</div>
+                        <div class="reference-details">LEP adults who have more visits with providers who speak their preferred language are significantly less likely to report facing language barriers: 40% vs 60% for those with fewer language-concordant visits.</div>
+                        <div class="reference-authors">Source: KFF Survey on Racism, Discrimination, and Health (2024)</div>
+                    </div>
+                    
+                    <div class="reference-card">
+                        <div class="reference-title">Medical Error Rates</div>
+                        <div class="reference-details">In a study of medical malpractice claims across four states, 2.5% of claims were directly tied to language barriers, with 32 claims involving failure to use competent interpreters.</div>
+                        <div class="reference-authors">Source: Joint Commission Analysis & GLOBO Medical Safety Research</div>
+                    </div>
+                    
+                    <div class="reference-card">
+                        <div class="reference-title">Interpreter Training Gap</div>
+                        <div class="reference-details">Only 23% of medical trainees received instruction on working with interpreters, despite 80% of providers encountering LEP patients and 43% encountering them daily.</div>
+                        <div class="reference-authors">Source: Journal of Ethics, American Medical Association (2021)</div>
+                    </div>
+                </div>
+                
+                <div class="subsection-title">Cultural Competency Training Outcomes</div>
+                <div class="reference-grid">
+                    <div class="reference-card">
+                        <div class="reference-title">Provider Skill Improvement</div>
+                        <div class="reference-details">All 14 studies evaluating cultural competence training effects on provider skills demonstrated beneficial outcomes, including improved communication abilities and cultural awareness.</div>
+                        <div class="reference-authors">Source: Beach, M.C. et al., Medical Care (2005) - Systematic Review</div>
+                    </div>
+                    
+                    <div class="reference-card">
+                        <div class="reference-title">Patient Satisfaction Enhancement</div>
+                        <div class="reference-details">Multiple systematic reviews found evidence that cultural competence training improves patient satisfaction, with some studies showing patients report better opinions of trained clinicians.</div>
+                        <div class="reference-authors">Source: BMC Health Services Research (2014); County Health Rankings Evidence Review</div>
+                    </div>
+                    
+                    <div class="reference-card">
+                        <div class="reference-title">Cost-Effectiveness Evidence</div>
+                        <div class="reference-details">One hospital study showed 30-day readmission reduction from 17.8% to 13.4% after installing bedside interpreter phones, saving an estimated $161,404 over 8 months.</div>
+                        <div class="reference-authors">Source: Arine Health Equity Research (2025)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bibliography -->
     <section class="main-content">
         <div class="container">
             <div class="section">
@@ -441,6 +220,20 @@
                         <div class="reference-details">Medical Care, 43(4), 356-373. (2005)</div>
                         <div class="reference-doi">PMID: 15778639</div>
                     </div>
+
+                    <div class="reference-card">
+                        <div class="reference-authors">Betancourt, J. R., Green, A. R., Carrillo, J. E., & Ananeh-Firempong, O.</div>
+                        <div class="reference-title">Defining cultural competence: A practical framework for addressing racial/ethnic disparities in health and health care.</div>
+                        <div class="reference-details">Public Health Reports, 118(4), 293-302. (2003)</div>
+                        <div class="reference-doi"><a href="https://doi.org/10.1093/phr/118.4.293" target="_blank">https://doi.org/10.1093/phr/118.4.293</a></div>
+                    </div>
+
+                    <div class="reference-card">
+                        <div class="reference-authors">Cohen, A. L., Rivara, F., Marcuse, E. K., McPhillips, H., & Davis, R.</div>
+                        <div class="reference-title">Are language barriers associated with serious medical events in hospitalized pediatric patients?</div>
+                        <div class="reference-details">Pediatrics, 116(3), 575-579. (2005)</div>
+                        <div class="reference-doi"><a href="https://doi.org/10.1542/peds.2005-0521" target="_blank">https://doi.org/10.1542/peds.2005-0521</a></div>
+                    </div>
                     
                     <div class="reference-card">
                         <div class="reference-authors">Coleman, J. S., & Angosta, A. D.</div>
@@ -455,12 +248,26 @@
                         <div class="reference-details">Journal of General Internal Medicine, 34(8), 1591-1606. (2019)</div>
                         <div class="reference-doi"><a href="https://doi.org/10.1007/s11606-019-04847-5" target="_blank">https://doi.org/10.1007/s11606-019-04847-5</a></div>
                     </div>
+
+                    <div class="reference-card">
+                        <div class="reference-authors">Flores, G., & Ngui, E.</div>
+                        <div class="reference-title">Racial/ethnic disparities and patient safety.</div>
+                        <div class="reference-details">Pediatric Clinics of North America, 53(6), 1197-1215. (2006)</div>
+                        <div class="reference-doi"><a href="https://doi.org/10.1016/j.pcl.2006.09.003" target="_blank">https://doi.org/10.1016/j.pcl.2006.09.003</a></div>
+                    </div>
                     
                     <div class="reference-card">
                         <div class="reference-authors">Hemberg, J. A. V., & Vilander, S.</div>
                         <div class="reference-title">Cultural and communicative competence in the caring relationship with patients from another culture.</div>
                         <div class="reference-details">Scandinavian Journal of Caring Sciences, 31(4), 822–829. (2017)</div>
                         <div class="reference-doi"><a href="https://doi.org/10.1111/scs.12403" target="_blank">https://doi.org/10.1111/scs.12403</a></div>
+                    </div>
+
+                    <div class="reference-card">
+                        <div class="reference-authors">Institute of Medicine Committee on Quality of Health Care in America</div>
+                        <div class="reference-title">Crossing the quality chasm: A new health system for the 21st century.</div>
+                        <div class="reference-details">Washington, DC: National Academy Press. (2001)</div>
+                        <div class="reference-doi">ISBN: 0-309-07280-8</div>
                     </div>
                     
                     <div class="reference-card">
@@ -482,6 +289,20 @@
                         <div class="reference-title">Changes in research on language barriers in health care since 2003: a cross-sectional review study.</div>
                         <div class="reference-details">International Journal for Equity in Health, 15, 4. (2016)</div>
                         <div class="reference-doi"><a href="https://doi.org/10.1186/s12939-016-0295-7" target="_blank">https://doi.org/10.1186/s12939-016-0295-7</a></div>
+                    </div>
+
+                    <div class="reference-card">
+                        <div class="reference-authors">Smedley, B. D., Stith, A. Y., & Nelson, A. R. (Eds.)</div>
+                        <div class="reference-title">Unequal treatment: Confronting racial and ethnic disparities in health care.</div>
+                        <div class="reference-details">Washington, DC: The National Academies Press. (2003)</div>
+                        <div class="reference-doi"><a href="https://doi.org/10.17226/12875" target="_blank">https://doi.org/10.17226/12875</a></div>
+                    </div>
+
+                    <div class="reference-card">
+                        <div class="reference-authors">Wilson-Stronks, A., Lee, K. K., Cordero, C. L., Kopp, A. L., & Galvez, E.</div>
+                        <div class="reference-title">One size does not fit all: Meeting the health care needs of diverse populations.</div>
+                        <div class="reference-details">The Joint Commission. (2008)</div>
+                        <div class="reference-doi">Available from: Joint Commission Resources</div>
                     </div>
                 </div>
             </div>
