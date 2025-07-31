@@ -1,38 +1,526 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>References - Echo Medical Simulator</title>
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reference - Project ECHO</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        /* Navigation */
+        nav {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 0;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: #667eea;
+        }
+
+        /* Header */
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 140px 0 80px;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .page-header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .page-header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 80px 0;
+        }
+
+        .section {
+            margin-bottom: 80px;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            color: #2d3748;
+            text-align: center;
+        }
+
+        .subsection-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin: 40px 0 25px;
+            color: #4a5568;
+            border-left: 4px solid #667eea;
+            padding-left: 20px;
+        }
+
+        /* Reference Cards */
+        .reference-grid {
+            display: grid;
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .reference-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-left: 5px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .reference-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+
+        .reference-authors {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 8px;
+            font-size: 1.05rem;
+        }
+
+        .reference-title {
+            font-size: 1.1rem;
+            color: #4a5568;
+            margin-bottom: 8px;
+            font-style: italic;
+        }
+
+        .reference-details {
+            color: #64748b;
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+        }
+
+        .reference-doi {
+            color: #667eea;
+            font-size: 0.9rem;
+            word-break: break-all;
+        }
+
+        .reference-doi a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .reference-doi a:hover {
+            text-decoration: underline;
+        }
+
+        /* Key Findings Section */
+        .key-findings {
+            background: #f8fafc;
+            padding: 80px 0;
+        }
+
+        .findings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .finding-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .finding-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 2rem;
+            color: white;
+        }
+
+        .finding-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #2d3748;
+        }
+
+        .finding-text {
+            color: #64748b;
+            line-height: 1.6;
+        }
+
+        /* Methodology Section */
+        .methodology {
+            padding: 80px 0;
+        }
+
+        .method-steps {
+            display: grid;
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .method-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 25px;
+            padding: 30px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .step-number {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .step-content h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #2d3748;
+        }
+
+        .step-content p {
+            color: #64748b;
+            line-height: 1.6;
+        }
+
+        /* Footer */
+        footer {
+            background: #1a202c;
+            color: white;
+            padding: 60px 0 30px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer-section h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #90cdf4;
+        }
+
+        .footer-section p, .footer-section a {
+            color: #a0aec0;
+            line-height: 1.6;
+            text-decoration: none;
+        }
+
+        .footer-section a:hover {
+            color: white;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid #2d3748;
+            padding-top: 30px;
+            text-align: center;
+            color: #718096;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .page-header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .method-step {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .findings-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
     <nav>
-      <ul class="main-nav">
-        <li><a href="index.html">Home</a></li>
-        <li class="dropdown">
-          <a href="#">Training</a>
-          <ul class="dropdown-content">
-            <li><a href="simulator.html">Simulator</a></li>
-            <li><a href="clinical-help.html">Clinical Help</a></li>
-            <li><a href="patient-intake.html">Patient Intake</a></li>
-          </ul>
-        </li>
-        <li><a href="help.html">Help</a></li>
-        <li><a href="references.html">References</a></li>
-      </ul>
+        <div class="nav-container">
+            <div class="logo">Project ECHO</div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="reference.html" class="active">Reference</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </div>
     </nav>
-    <main>
-      <section class="card">
-        <h1>References</h1>
-        <ul>
-          <li>Smith J. et al. "Medical Simulation for Students" (2023).</li>
-          <li>Doe A. "Clinical Training Guidelines" (2022).</li>
-        </ul>
-      </section>
-    </main>
-    <footer>
-      <p>&copy; 2025 Echo Training</p>
+
+    <!-- Page Header -->
+    <section class="page-header">
+        <div class="container">
+            <h1>Research & References</h1>
+            <p>Evidence-based foundations for improving clinician-LEP patient communication</p>
+        </div>
+    </section>
+
+    <!-- Key Findings -->
+    <section class="key-findings">
+        <div class="container">
+            <h2 class="section-title">Key Research Findings</h2>
+            
+            <div class="findings-grid">
+                <div class="finding-card">
+                    <div class="finding-icon">🌍</div>
+                    <h3 class="finding-title">LEP Patient Population</h3>
+                    <p class="finding-text">Over 26 million patients in the U.S. have Limited English Proficiency, creating significant communication barriers in healthcare settings that impact quality of care and health outcomes.</p>
+                </div>
+                
+                <div class="finding-card">
+                    <div class="finding-icon">📚</div>
+                    <h3 class="finding-title">Provider Training Gap</h3>
+                    <p class="finding-text">Most healthcare providers receive minimal training in cultural competency and communication with LEP patients, leading to missed opportunities for effective care delivery.</p>
+                </div>
+                
+                <div class="finding-card">
+                    <div class="finding-icon">🤝</div>
+                    <h3 class="finding-title">Cultural Humility</h3>
+                    <p class="finding-text">Evidence shows that provider cultural humility, empathy, and active listening significantly improve patient trust, satisfaction, and health outcomes across diverse populations.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Methodology -->
+    <section class="methodology">
+        <div class="container">
+            <h2 class="section-title">Research Methodology</h2>
+            
+            <div class="method-steps">
+                <div class="method-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Literature Review</h3>
+                        <p>Comprehensive review of existing research on communication barriers between healthcare providers and LEP patients, identifying key challenges including language barriers, limited cultural humility, and insufficient provider training.</p>
+                    </div>
+                </div>
+                
+                <div class="method-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Rubric Development</h3>
+                        <p>Creation of a 10-point evidence-based rubric for culturally responsive care, incorporating elements such as empathy, active listening, clear language, and cultural sensitivity based on established best practices.</p>
+                    </div>
+                </div>
+                
+                <div class="method-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>AI Simulation Design</h3>
+                        <p>Development of a rule-based HTML simulation chatbot that provides immediate, context-sensitive feedback on provider responses to LEP patients, focusing on trust-building and cultural competency.</p>
+                    </div>
+                </div>
+                
+                <div class="method-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>Clinical Co-Design</h3>
+                        <p>Collaboration with healthcare professionals to develop multilingual pre-visit intake forms that capture patient communication preferences, visit goals, and concerns to support personalized care approaches.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- References -->
+    <section class="main-content">
+        <div class="container">
+            <div class="section">
+                <h2 class="section-title">Bibliography</h2>
+                
+                <div class="reference-grid">
+                    <div class="reference-card">
+                        <div class="reference-authors">Alkhaled, T., Rohde, G., Lie, B., & Bergland, A.</div>
+                        <div class="reference-title">Beyond challenges and enrichment: A qualitative account of cross-cultural experiences of nursing patients with an ethnic minority background in Norway.</div>
+                        <div class="reference-details">BMC Nursing, 21, 322. (2022)</div>
+                        <div class="reference-doi"><a href="https://doi.org/10.1186/s12912-022-01102-x" target="_blank">https://doi.org/10.1186/s12912-022-01102-x</a></div>
+                    </div>
+                    
+                    <div class="reference-card">
+                        <div class="reference-authors">Antón-Solanas, I., Rodríguez-Roca, B., Vanceulebroeck, V., et al.</div>
+                        <div class="reference-title">Qualified nurses' perceptions of cultural competence and experiences of caring for culturally diverse patients: A qualitative study in four European countries.</div>
+                        <div class="reference-details">Nursing Reports, 12(2), 348–364. (2022)</div>
+                        <div class="reference-doi"><a href="https://doi.org/10.3390/nursrep12020034" target="_blank">https://doi.org/10.3390/nursrep12020034</a></div>
+                    </div>
+                    
+                    <div class="reference-card">
+                        <div class="reference-authors">Beach, M. C., Keruly, J., & Green, A. R.</div>
+                        <div class="reference-title">Cultural competence: A systematic review of health care provider educational interventions.</div>
+                        <div class="reference-details">Medical Care, 43(4), 356-373. (2005)</div>
+                        <div class="reference-doi">PMID: 15778639</div>
+                    </div>
+                    
+                    <div class="reference-card">
+                        <div class="reference-authors">Coleman, J. S., & Angosta, A. D.</div>
+                        <div class="reference-title">The lived experiences of acute-care bedside registered nurses caring for patients and their families with limited English proficiency: A silent shift.</div>
+                        <div class="reference-details">Journal of Clinical Nursing, 26(5–6), 678–689. (2017)</div>
+                        <div class="reference-doi"><a href="https://doi.org/10.1111/jocn.13567" target="_blank">https://doi.org/10.1111/jocn.13567</a></div>
+                    </div>
+                    
+                    <div class="reference-card">
+                        <div class="reference-authors">Diamond, L. C., Izquierdo, K., Canfield, D., Matsoukas, K., & Gany, F.</div>
+                        <div class="reference-title">A systematic review of the impact of patient–physician non-English language concordance on quality of care and outcomes.</div>
+                        <div class="reference-details">Journal of General Internal Medicine, 34(8), 1591-1606. (2019)</div>
+                        <div class="reference-doi"><a href="https://doi.org/10.1007/s11606-019-04847-5" target="_blank">https://doi.org/10.1007/s11606-019-04847-5</a></div>
+                    </div>
+                    
+                    <div class="reference-card">
+                        <div class="reference-authors">Hemberg, J. A. V., & Vilander, S.</div>
+                        <div class="reference-title">Cultural and communicative competence in the caring relationship with patients from another culture.</div>
+                        <div class="reference-details">Scandinavian Journal of Caring Sciences, 31(4), 822–829. (2017)</div>
+                        <div class="reference-doi"><a href="https://doi.org/10.1111/scs.12403" target="_blank">https://doi.org/10.1111/scs.12403</a></div>
+                    </div>
+                    
+                    <div class="reference-card">
+                        <div class="reference-authors">Kaihlanen, A. M., Hietapakka, L., & Heponiemi, T.</div>
+                        <div class="reference-title">Increasing cultural awareness: Qualitative study of nurses' perceptions about cultural competence training.</div>
+                        <div class="reference-details">BMC Nursing, 18, Article 38. (2019)</div>
+                        <div class="reference-doi"><a href="https://doi.org/10.1186/s12912-019-0363-x" target="_blank">https://doi.org/10.1186/s12912-019-0363-x</a></div>
+                    </div>
+                    
+                    <div class="reference-card">
+                        <div class="reference-authors">Larsen, R., Mangrio, E., & Persson, K.</div>
+                        <div class="reference-title">Interpersonal communication in transcultural nursing care in India: A descriptive qualitative study.</div>
+                        <div class="reference-details">Journal of Transcultural Nursing, 32(4), 310–317. (2021)</div>
+                        <div class="reference-doi"><a href="https://doi.org/10.1177/1043659620920693" target="_blank">https://doi.org/10.1177/1043659620920693</a></div>
+                    </div>
+                    
+                    <div class="reference-card">
+                        <div class="reference-authors">Schwei, R. J., Del Pozo, S., Agger-Gupta, N., et al.</div>
+                        <div class="reference-title">Changes in research on language barriers in health care since 2003: a cross-sectional review study.</div>
+                        <div class="reference-details">International Journal for Equity in Health, 15, 4. (2016)</div>
+                        <div class="reference-doi"><a href="https://doi.org/10.1186/s12939-016-0295-7" target="_blank">https://doi.org/10.1186/s12939-016-0295-7</a></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="contact">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Project ECHO</h3>
+                    <p>Breaking down communication barriers in healthcare through AI-powered simulation. "Because hearing is not listening." - Empowering culturally responsive care for all patients.</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Quick Links</h3>
+                    <p><a href="index.html">Home</a></p>
+                    <p><a href="about.html">About Us</a></p>
+                    <p><a href="reference.html">Reference</a></p>
+                    <p><a href="https://clinical-lep-simulator.web.app/" target="_blank">Try Simulator</a></p>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Research Team</h3>
+                    <p>Johns Hopkins School of Medicine</p>
+                    <p>Johns Hopkins Applied Physics Laboratory</p>
+                    <p>Dana Foundation Support</p>
+                    <p>Collaborative Research Initiative</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Contact Info</h3>
+                    <p>Email: wgr@jhu.edu</p>
+                    <p>Lead: Charbel Maroun</p>
+                    <p>charbel.maroun0702@gmail.com</p>
+                    <p>Johns Hopkins University</p>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2025 Project ECHO - Johns Hopkins School of Medicine & Applied Physics Laboratory. All rights reserved. | Privacy Policy | Terms of Service</p>
+            </div>
+        </div>
     </footer>
-  </body>
+</body>
 </html>
