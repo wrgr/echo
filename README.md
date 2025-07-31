@@ -69,10 +69,10 @@ ECHO is an AI-powered clinical simulation platform that helps healthcare provide
 
 ## Running Tests
 
-The project uses the default Create React App testing setup.
+The project uses the default Create React App testing setup. No tests are defined yet, but the test command will exit successfully.
 
 ```
-npm test -- --watchAll=false
+npm test
 ```
 
 ## License
