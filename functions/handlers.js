@@ -43,7 +43,7 @@ async function handleGeneratePatientFromForm(req, res, geminiApiSecret) {
 
     const patientProfile = {
       name: formData.name || 'Custom Patient',
-      age: parseInt(formData.age) || 35,
+      age: parseInt(formData.age, 10) || 35,
       genderIdentity: formData.genderIdentity || 'Not specified',
       pronouns: formData.pronouns || 'they/them',
       nativeLanguage: formData.nativeLanguage || 'English',
