@@ -27,6 +27,12 @@ body {
   background-color: #f8fafc;
 }
 
+/* Global logo sizing */
+.logo-image {
+  height: 60px;
+  width: auto;
+}
+
 /* App Container - Main wrapper for both SimulationPage and HelpPage */
 .app-container {
   font-family: 'Roboto', sans-serif;
