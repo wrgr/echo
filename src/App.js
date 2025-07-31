@@ -3,7 +3,7 @@ import { Routes, Route, Link } from "react-router-dom";
 import './index.css';
 import SimulationPage from "./SimulationPage";
 import HelpPage from "./HelpPage";
-import PatientIntakeForm.js from "./PatientIntakeForm"
+import PatientIntakeForm from "./PatientIntakeForm"
 
 function App() {
   return (

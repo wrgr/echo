@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './index.css';
 
 // Import existing patient data files
-import predefinedPatients from './predefinedPatients.json';
+import predefinedPatients from './patients/predefinedPatients.json';
 
 // Using the same styles pattern as HelpPage.js and SimulationPage.js
 const styles = {

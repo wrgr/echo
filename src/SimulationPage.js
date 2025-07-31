@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import predefinedPatients from "./predefinedPatients.json";
+import predefinedPatients from "./patients/predefinedPatients.json";
 import { useUserPatients } from './hooks/useUserPatients';
 import './index.css';
 

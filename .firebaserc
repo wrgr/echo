@@ -1,7 +1,7 @@
 {
   "projects": {
-    "localdev": "clinical-lep-simulator",
-    "default": "clinical-lep-simulator"
+    "localdev": "echo-main",
+    "default": "echo-d825e"
   },
   "targets": {},
   "etags": {}
