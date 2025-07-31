@@ -50,7 +50,7 @@ function SimulationPage() {
     handleInjectProviderResponse,
     handleMoveToNextPhase,
     getProgressPercentage,
-    getScoreColor,
+    getScoreClass,
     downloadTranscript,
   } = useSimulation();
 
@@ -151,7 +151,7 @@ function SimulationPage() {
               <div className="score-summary-card">
                 <h3>Overall Performance</h3>
                 <div className="score-display">
-                  <span className="score-number" style={{color: getScoreColor(totalScore, maxPossibleScore)}}>
+                  <span className={`score-number ${getScoreClass(totalScore, maxPossibleScore)}`}>
                     {totalScore}
                   </span>
                   <span className="score-divider">/</span>
@@ -252,9 +252,9 @@ function SimulationPage() {
                 </div>
               </div>
               <div className="progress-bar">
-                <div 
-                  className="progress-fill" 
-                  style={{width: `${progressPercentage}%`}}
+                <div
+                  className="progress-fill"
+                  style={{ '--progress-width': `${progressPercentage}%` }}
                 ></div>
               </div>
             </div>
@@ -263,7 +263,7 @@ function SimulationPage() {
             <div className="score-display-header">
               <div className="score-card-mini">
                 <div className="score-main">
-                  <span style={{color: getScoreColor(totalScore, maxPossibleScore)}}>
+                  <span className={getScoreClass(totalScore, maxPossibleScore)}>
                     {totalScore}
                   </span>
                   <span className="score-divider">/</span>
@@ -423,7 +423,7 @@ function SimulationPage() {
                 <div className="results-content">
                   <div className="final-score-display">
                     <div className="score-circle">
-                      <div className="score-value" style={{color: getScoreColor(totalScore, maxPossibleScore)}}>
+                      <div className={`score-value ${getScoreClass(totalScore, maxPossibleScore)}`}>
                         {totalScore}
                       </div>
                       <div className="score-total">out of {maxPossibleScore}</div>

@@ -606,13 +606,11 @@ function PatientIntakeForm() {
 
       {/* Tooltip Popup (renders when activeTooltip is set) */}
       {activeTooltip && FIELD_TOOLTIPS[activeTooltip] && (
-        <div 
+        <div
           className="tooltip-popup"
           style={{
-            position: 'fixed',
-            left: `${tooltipPosition.x}px`,
-            top: `${tooltipPosition.y}px`,
-            zIndex: 1000
+            '--tooltip-left': `${tooltipPosition.x}px`,
+            '--tooltip-top': `${tooltipPosition.y}px`
           }}
         >
           <h4 className="tooltip-title">{FIELD_TOOLTIPS[activeTooltip].title}</h4>
@@ -628,7 +626,7 @@ function PatientIntakeForm() {
       )}
 
       <div className="help-container">
-        <div className="help-section" style={{flex: '1'}}>
+        <div className="help-section flex-1">
           
           {/* ============================================================ */}
           {/* AI-POWERED FIELD POPULATION SECTION */}
@@ -659,7 +657,7 @@ function PatientIntakeForm() {
               rows="4"
             />
             
-            <div style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
+            <div className="column-gap-10">
               <button
                 className="submit-button"
                 onClick={handleAiPopulate}
@@ -669,13 +667,13 @@ function PatientIntakeForm() {
               </button>
               
               {successMessage && (
-                <p className="loading-message" style={{color: 'var(--success-color)', margin: '0'}}>
+                <p className="loading-message text-success no-margin">
                   {successMessage}
                 </p>
               )}
-              
+
               {aiError && (
-                <p className="error-message" style={{margin: '0'}}>
+                <p className="error-message no-margin">
                   {aiError}
                 </p>
               )}
@@ -765,7 +763,7 @@ function PatientIntakeForm() {
 
             {/* Success message display */}
             {successMessage && (
-              <p className="loading-message" style={{color: 'var(--success-color)'}}>
+              <p className="loading-message text-success">
                 {successMessage}
               </p>
             )}
@@ -775,7 +773,7 @@ function PatientIntakeForm() {
         {/* ============================================================ */}
         {/* GENERATED PATIENT PREVIEW PANEL */}
         {/* ============================================================ */}
-        <div className="patient-info-panel" style={{width: '400px'}}>
+        <div className="patient-info-panel">
           {generatedPatient ? (
             <div>
               <h3 className="patient-info-title">Generated Patient</h3>
@@ -829,16 +827,15 @@ function PatientIntakeForm() {
               </div>
               
               {/* Export button */}
-              <button 
-                className="control-button" 
+              <button
+                className="control-button mt-10"
                 onClick={downloadPatientJson}
-                style={{marginTop: '10px'}}
               >
                 Download JSON
               </button>
               
               {/* Usage instructions */}
-              <p className="loading-message" style={{fontSize: '0.8em', marginTop: '15px'}}>
+              <p className="loading-message small-text mt-15">
                 This patient has been saved locally and will appear as "User: {generatedPatient.name}" in the simulation page dropdown.
               </p>
             </div>
