@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useEffect, useRef } from "react";
 import predefinedPatients from "./patients/predefinedPatients.json";
-import { useUserPatients } from './hooks/useUserPatients';
-import './index.css';
-import { ENCOUNTER_PHASES_CLIENT, PHASE_RUBRIC_DEFINITIONS } from './utils/constants';
+import "./index.css";
+import { ENCOUNTER_PHASES_CLIENT, PHASE_RUBRIC_DEFINITIONS } from "./utils/constants";
+import { useSimulation } from "./hooks/useSimulation";
 
 /**
  * ECHO Simulation Page - Modern Card-Based Design
- * 
+ *
  * This component provides the main clinical simulation interface where healthcare providers
  * can practice patient interactions. Features include:
  * - Real-time chat with AI-powered patient simulation
@@ -18,379 +18,52 @@ import { ENCOUNTER_PHASES_CLIENT, PHASE_RUBRIC_DEFINITIONS } from './utils/const
  */
 
 
-// ============================================================================
+// ===========================================================================
 // MAIN COMPONENT
-// ============================================================================
+// ===========================================================================
 
 function SimulationPage() {
   // ========================================================================
-  // STATE MANAGEMENT
+  // HOOKS
   // ========================================================================
-  
-  /**
-   * Core conversation state
-   * - messages: Array of chat messages for UI display
-   * - conversationHistoryForAPI: Formatted conversation history for backend API
-   * - patientState: Complete patient profile object
-   * - inputValue: Current user input in the chat box
-   */
-  const [messages, setMessages] = useState([]);
-  const [conversationHistoryForAPI, setConversationHistoryForAPI] = useState([]);
-  const [patientState, setPatientState] = useState(null);
-  const [inputValue, setInputValue] = useState("");
-  
-  /**
-   * UI state management
-   * - isLoading: Shows loading indicators during API calls
-   * - selectedPatientIndex: Currently selected patient from dropdown
-   * - error: Error message to display to user
-   * - showCoachPanel: Toggle for coach assistance panel
-   */
-  const [isLoading, setIsLoading] = useState(false);
-  const [selectedPatientIndex, setSelectedPatientIndex] = useState("");
-  const [error, setError] = useState(null);
-  const [showCoachPanel, setShowCoachPanel] = useState(false);
-  
-  /**
-   * Modal state for different overlays
-   * - showFullPatientInfo: Full patient details modal
-   * - showScoringModal: Detailed scoring breakdown modal
-   */
-  const [showFullPatientInfo, setShowFullPatientInfo] = useState(false);
-  const [showScoringModal, setShowScoringModal] = useState(false);
-  
-  /**
-   * Clinical encounter state
-   * - currentPhase: Which phase of the encounter we're in (0-6)
-   * - providerTurnCount: Number of provider messages sent
-   * - phaseScores: Object containing scores for each completed phase
-   * - currentCumulativeScore: Running total score
-   * - totalPossibleScore: Maximum possible score so far
-   */
-  const [encounterState, setEncounterState] = useState({
-    currentPhase: 0,
-    providerTurnCount: 0,
-    phaseScores: {},
-    currentCumulativeScore: 0,
-    totalPossibleScore: 0,
-  });
-  
-  /**
-   * Final encounter feedback when simulation is complete
-   */
-  const [overallFeedback, setOverallFeedback] = useState(null);
 
-  // ========================================================================
-  // HOOKS AND REFS
-  // ========================================================================
-  
-  /**
-   * Custom hook for managing user-generated patients stored locally
-   */
-  const { userPatients, refreshUserPatients } = useUserPatients();
-  
+  const {
+    messages,
+    conversationHistoryForAPI,
+    patientState,
+    inputValue,
+    isLoading,
+    selectedPatientIndex,
+    error,
+    showCoachPanel,
+    showFullPatientInfo,
+    showScoringModal,
+    encounterState,
+    overallFeedback,
+    userPatients,
+    refreshUserPatients,
+    setInputValue,
+    setShowFullPatientInfo,
+    setShowScoringModal,
+    setShowCoachPanel,
+    setSelectedPatientIndex,
+    resetSimulation,
+    loadPatient,
+    handlePredefinedPatientChange,
+    sendInteractionToServer,
+    handleSendMessage,
+    handleCoachTipRequest,
+    handleInjectProviderResponse,
+    handleMoveToNextPhase,
+    getProgressPercentage,
+    getScoreColor,
+    downloadTranscript,
+  } = useSimulation();
+
   /**
    * Reference to chat window for auto-scrolling to latest message
    */
   const chatWindowRef = useRef(null);
-  
-  /**
-   * Firebase Cloud Function endpoint for all backend interactions
-   */
-  const functionUrl = "https://us-central1-echo-d825e.cloudfunctions.net/echoSimulator";
-
-  // ========================================================================
-  // CORE FUNCTIONALITY - SIMULATION MANAGEMENT
-  // ========================================================================
-
-  /**
-   * Reset all simulation state to initial values
-   * Called when starting a new patient or resetting the simulation
-   */
-  const resetSimulation = useCallback(() => {
-    setIsLoading(false);
-    setMessages([]);
-    setConversationHistoryForAPI([]);
-    setPatientState(null);
-    setSelectedPatientIndex("");
-    setShowFullPatientInfo(false);
-    setShowScoringModal(false);
-    setShowCoachPanel(false);
-    setOverallFeedback(null);
-    setError(null);
-    setEncounterState({
-      currentPhase: 0,
-      providerTurnCount: 0,
-      phaseScores: {},
-      currentCumulativeScore: 0,
-      totalPossibleScore: 0,
-    });
-  }, []);
-
-  /**
-   * Load a patient profile and initialize the simulation
-   * @param {Object} patientProfile - Complete patient data object
-   * @param {string} initialCoachMessage - Welcome message from coach
-   * @param {Object} initialEncounterState - Starting encounter state
-   */
-  const loadPatient = useCallback((patientProfile, initialCoachMessage, initialEncounterState) => {
-    setPatientState(patientProfile);
-    setMessages([{ text: initialCoachMessage, from: "coach" }]);
-    setConversationHistoryForAPI([]);
-    setEncounterState(initialEncounterState);
-  }, []);
-
-  /**
-   * Handle patient selection from dropdown menu
-   * Supports both predefined patients and user-generated patients
-   */
-  const handlePredefinedPatientChange = useCallback((event) => {
-    resetSimulation();
-    const value = event.target.value;
-    setSelectedPatientIndex(value);
-    
-    if (value !== "") {
-      let patient;
-      let isUserGenerated = false;
-      
-      // Determine if this is a user-generated patient (prefixed with "user-")
-      if (value.startsWith("user-")) {
-        const userId = parseInt(value.replace("user-", ""), 10);
-        patient = userPatients.find(p => p.id === userId);
-        isUserGenerated = true;
-      } else {
-        // It's a predefined patient
-        const index = parseInt(value, 10);
-        patient = predefinedPatients[index];
-      }
-      
-      if (patient) {
-        const initialCoachMessage = ENCOUNTER_PHASES_CLIENT[0].coachIntro(patient);
-        setPatientState(patient);
-        setMessages([{ text: initialCoachMessage, from: "coach" }]);
-        setConversationHistoryForAPI([]);
-        setEncounterState({
-          currentPhase: 0,
-          providerTurnCount: 0,
-          phaseScores: {},
-          currentCumulativeScore: 0,
-          totalPossibleScore: 0,
-        });
-        
-        if (isUserGenerated) {
-          console.log("Loaded user-generated patient:", patient.name);
-        }
-      }
-    }
-  }, [resetSimulation, userPatients]);
-
-  // ========================================================================
-  // API COMMUNICATION
-  // ========================================================================
-
-  /**
-   * Generic function to communicate with the Firebase Cloud Function
-   * Handles all types of interactions: messages, coach tips, injections, etc.
-   * 
-   * @param {string} actionType - The specific action to perform
-   * @param {string} input - The input data (message, tip request, etc.)
-   */
-  const sendInteractionToServer = useCallback(async (actionType, input) => {
-    // Prevent multiple simultaneous requests
-    if (!patientState || isLoading) return;
-    
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch(functionUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "interact_conversation", // Main action for Firebase Function
-          actionType: actionType, // Specific sub-action
-          latestInput: input,
-          patientState: patientState,
-          conversationHistory: conversationHistoryForAPI,
-          encounterState: encounterState,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        throw new Error(`HTTP error! status: ${response.status} - ${errorBody}`);
-      }
-
-      const data = await response.json();
-      console.log("Received data from server:", data);
-
-      // Update patient state if server sends changes
-      setPatientState(data.patientState || patientState);
-      
-      // Update encounter state (phase, scores, etc.)
-      setEncounterState(data.encounterState);
-      
-      // Store final feedback if encounter is complete
-      setOverallFeedback(data.overallFeedback);
-
-      // Handle injected provider responses (for good/poor response demonstrations)
-      if (data.injectedProviderResponse) {
-        setMessages((prev) => [...prev, { text: data.injectedProviderResponse, from: "provider" }]);
-        setConversationHistoryForAPI((prev) => [...prev, { role: "provider", parts: [{ text: data.injectedProviderResponse }] }]);
-      }
-
-      // Add the main response (patient or coach message)
-      setMessages((prev) => [...prev, { text: data.simulatorResponse, from: data.from }]);
-      setConversationHistoryForAPI((prev) => [...prev, { role: data.from, parts: [{ text: data.simulatorResponse }] }]);
-
-      // Handle additional coach messages (e.g., phase transitions)
-      if (data.nextCoachMessage && data.nextCoachMessage !== data.simulatorResponse) {
-        setMessages((prev) => [...prev, { text: data.nextCoachMessage, from: "coach" }]);
-        setConversationHistoryForAPI((prev) => [...prev, { role: "coach", parts: [{ text: data.nextCoachMessage }] }]);
-      }
-
-    } catch (err) {
-      console.error("Failed to communicate with cloud function:", err);
-      setError(`Failed to communicate with the AI backend: ${err.message}. Please try again.`);
-      setMessages((prev) => [...prev, { text: `Sorry, an error occurred with the AI backend. Check console for details.`, from: "coach" }]);
-      
-      // Revert the last provider message from history if this was a regular interaction
-      if (actionType === "regular_interaction") {
-        setConversationHistoryForAPI((prev) => prev.slice(0, -1));
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [patientState, isLoading, conversationHistoryForAPI, encounterState, functionUrl]);
-
-  // ========================================================================
-  // USER INTERACTION HANDLERS
-  // ========================================================================
-
-  /**
-   * Handle sending a provider message
-   * Validates input, adds to conversation, and sends to backend
-   */
-  const handleSendMessage = async () => {
-    // Validation checks
-    if (inputValue.trim() === "" || !patientState || isLoading || encounterState.currentPhase >= Object.keys(ENCOUNTER_PHASES_CLIENT).length - 1) {
-      if (encounterState.currentPhase >= Object.keys(ENCOUNTER_PHASES_CLIENT).length - 1) {
-        setMessages((prev) => [...prev, { text: "The encounter is complete. Please start a new patient.", from: "coach"}]);
-      }
-      setInputValue("");
-      return;
-    }
-
-    const providerMessageText = inputValue;
-    
-    // Add message to UI immediately for responsive feel
-    setMessages((prev) => [...prev, { text: providerMessageText, from: "provider" }]);
-    setConversationHistoryForAPI((prev) => [...prev, { role: "provider", parts: [{ text: providerMessageText }] }]);
-    setInputValue(""); // Clear input immediately
-
-    // Send to backend for processing
-    await sendInteractionToServer("regular_interaction", providerMessageText);
-  };
-
-  /**
-   * Request a coaching tip from the AI coach
-   */
-  const handleCoachTipRequest = async () => {
-    setShowCoachPanel(true); // Show coach panel
-    await sendInteractionToServer("get_coach_tip", "");
-  };
-
-  /**
-   * Inject a demonstration response (good or poor example)
-   * @param {string} type - "good" or "poor"
-   */
-  const handleInjectProviderResponse = async (type) => {
-    await sendInteractionToServer("inject_provider_response", type);
-  };
-
-  /**
-   * Manually advance to the next phase of the encounter
-   */
-  const handleMoveToNextPhase = async () => {
-    // Special handling for initial phase transition (client-side only)
-    if (encounterState.currentPhase === 0) {
-      setEncounterState(prev => ({ ...prev, currentPhase: 1 }));
-      setMessages((prev) => [...prev, {text: `COACH: You've started Phase 1: ${ENCOUNTER_PHASES_CLIENT[1].name}. ${ENCOUNTER_PHASES_CLIENT[1].coachPrompt || ''}`, from: "coach"}]);
-      return;
-    }
-    
-    // For all other phases, let the server handle the transition
-    await sendInteractionToServer("move_to_next_phase", "");
-  };
-
-  // ========================================================================
-  // UTILITY FUNCTIONS
-  // ========================================================================
-
-  /**
-   * Calculate the completion percentage for the progress bar
-   */
-  const getProgressPercentage = () => {
-    const totalPhases = Object.keys(ENCOUNTER_PHASES_CLIENT).length - 2; // Exclude phases 0 and 6
-    const currentProgress = Math.max(0, encounterState.currentPhase - 1);
-    return Math.min(100, (currentProgress / totalPhases) * 100);
-  };
-
-  /**
-   * Get a color for the current score based on performance
-   */
-  const getScoreColor = (score, maxScore) => {
-    if (maxScore === 0) return '#64748b';
-    const percentage = (score / maxScore) * 100;
-    if (percentage >= 80) return '#059669'; // Green
-    if (percentage >= 60) return '#d97706'; // Orange
-    return '#dc2626'; // Red
-  };
-
-  /**
-   * Download the complete encounter transcript with scoring
-   */
-  const downloadTranscript = () => {
-    const transcriptContent = messages.map((msg) => {
-      const cleanText = msg.text.replace(/\*\*(.*?)\*\*/g, "$1");
-      return `[${msg.from.toUpperCase()}] ${cleanText}`;
-    }).join("\n\n");
-
-    let scoreSummary = "\n\n--- ENCOUNTER SUMMARY ---\n";
-    scoreSummary += `Total Score: ${encounterState.currentCumulativeScore} / ${encounterState.totalPossibleScore}\n\n`;
-
-    // Add detailed phase scoring
-    if (typeof encounterState.phaseScores === 'object' && encounterState.phaseScores !== null) {
-      Object.entries(encounterState.phaseScores).forEach(([phaseName, phaseCategoryScores]) => {
-        if (phaseCategoryScores) {
-          scoreSummary += `\n--- ${phaseName} Score ---\n`;
-          Object.entries(PHASE_RUBRIC_DEFINITIONS).forEach(([catKey, catDef]) => {
-            const score = phaseCategoryScores[catKey];
-            if (score) {
-              scoreSummary += `${catDef.label}: ${score.points}/${catDef.max} - ${score.justification}\n`;
-            }
-          });
-        }
-      });
-    }
-
-    if (overallFeedback) {
-      scoreSummary += `\n\n--- OVERALL FEEDBACK ---\n${overallFeedback}\n`;
-    }
-
-    // Create and download the file
-    const blob = new Blob([transcriptContent + scoreSummary], {type: "text/plain;charset=utf-8"});
-    const today = new Date();
-    const dateString = today.toISOString().slice(0, 10);
-    const fileName = `ECHO_Encounter_Transcript_${patientState?.name?.replace(/\s/g, "_") || "unknown_patient"}_${dateString}.txt`;
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
-  };
 
   // ========================================================================
   // SIDE EFFECTS
@@ -404,27 +77,6 @@ function SimulationPage() {
       chatWindowRef.current.scrollTop = chatWindowRef.current.scrollHeight;
     }
   }, [messages]);
-
-  /**
-   * Load a default patient when component mounts (if none selected)
-   */
-  useEffect(() => {
-    if (!patientState && predefinedPatients.length > 0) {
-      // Auto-load the first predefined patient
-      const patient = predefinedPatients[0];
-      const initialCoachMessage = ENCOUNTER_PHASES_CLIENT[0].coachIntro(patient);
-      setPatientState(patient);
-      setMessages([{ text: initialCoachMessage, from: "coach" }]);
-      setSelectedPatientIndex("0");
-    }
-  }, [patientState]);
-
-  /**
-   * Refresh user-generated patients list on component mount
-   */
-  useEffect(() => {
-    refreshUserPatients();
-  }, [refreshUserPatients]);
 
   // ========================================================================
   // COMPUTED VALUES
