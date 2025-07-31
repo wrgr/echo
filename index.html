@@ -55,11 +55,6 @@
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
 
-        .hero-logo {
-            max-width: 200px;
-            margin-bottom: 20px;
-        }
-
         .description-card {
             background: #fff;
             max-width: 800px;
@@ -67,7 +62,22 @@
             padding: 30px;
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            text-align: center;
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            text-align: left;
+        }
+
+        .description-logo {
+            max-width: 150px;
+            height: auto;
+        }
+
+        @media (max-width: 600px) {
+            .description-card {
+                flex-direction: column;
+                text-align: center;
+            }
         }
 
         .cta-button {
@@ -310,7 +320,6 @@
     <!-- Hero Section -->
     <section class="hero">
         <div class="hero-content">
-            <img src="echo-logo.jpg" alt="Project ECHO logo" class="hero-logo">
             <h1>Project ECHO</h1>
             <div style="font-size: 1.6rem; font-weight: 600; margin: 25px 0; color: #f0f8ff; font-style: italic;">"Because hearing is not listening."</div>
             <a href="https://clinical-lep-simulator.web.app/" class="cta-button" target="_blank">Try the Simulator</a>
@@ -318,6 +327,7 @@
     </section>
 
     <section class="description-card">
+        <img src="echo-logo.jpg" alt="Project ECHO logo" class="description-logo">
         <p>Effective Conversations for Healthcare Optimization. Breaking down communication barriers between clinicians and Limited English Proficiency (LEP) patients through AI-powered simulation and training.</p>
     </section>
 
