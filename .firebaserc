@@ -1,8 +1,0 @@
-{
-  "projects": {
-    "localdev": "clinical-lep-simulator",
-    "default": "clinical-lep-simulator"
-  },
-  "targets": {},
-  "etags": {}
-}
