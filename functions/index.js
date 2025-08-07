@@ -15,9 +15,9 @@ const { getHelpAdviceFromGemini } = require('./gemini');
 admin.initializeApp();
 setGlobalOptions({ region: 'us-central1' });
 
-const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY');
+const geminiApiSecret = defineSecret('GEMINI_API_KEY');
 
-exports.echoSimulator = onRequest({ cors: true, secrets: [GEMINI_API_KEY] }, async (req, res) => {
+exports.echoSimulator = onRequest({ cors: true, secrets: [geminiApiSecret] }, async (req, res) => {
   if (req.method === 'OPTIONS') {
     return cors(req, res, () => res.status(204).send(''));
   }
@@ -32,24 +32,24 @@ exports.echoSimulator = onRequest({ cors: true, secrets: [GEMINI_API_KEY] }, asy
       const { action } = req.body;
 
       if (action === 'generate_patient') {
-        await handleGeneratePatient(req, res, GEMINI_API_KEY);
+        await handleGeneratePatient(req, res, geminiApiSecret);
       } else if (action === 'interact_conversation') {
-        await handleInteraction(req, res, GEMINI_API_KEY);
+        await handleInteraction(req, res, geminiApiSecret);
       } else if (action === 'get_help_advice') {
         const { patientInfo, providerPerception, question } = req.body;
         if (!patientInfo || !providerPerception || !question) {
           return res.status(400).send('Missing data for help advice request.');
         }
-        await getHelpAdviceFromGemini(GEMINI_API_KEY, patientInfo, providerPerception, question)
+        await getHelpAdviceFromGemini(geminiApiSecret, patientInfo, providerPerception, question)
           .then(advice => res.status(200).json({ advice }))
           .catch(error => {
             console.error('echoSimulator: Error getting help advice from Gemini:', error);
             res.status(500).send('Failed to get help advice: ' + error.message);
           });
       } else if (action === 'ai_populate_fields') {
-        await handleAiPopulateFields(req, res, GEMINI_API_KEY);
+        await handleAiPopulateFields(req, res, geminiApiSecret);
       } else if (action === 'generate_patient_from_form') {
-        await handleGeneratePatientFromForm(req, res, GEMINI_API_KEY);
+        await handleGeneratePatientFromForm(req, res, geminiApiSecret);
       } else {
         return res.status(400).send(
           "Invalid or missing 'action' in request body. Expected 'generate_patient', 'interact_conversation', 'get_help_advice', 'ai_populate_fields', or 'generate_patient_from_form'."

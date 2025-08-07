@@ -434,6 +434,7 @@ html, body {
   border-radius: 12px;
   padding: 20px;
   overflow-y: auto;
+  max-height: 1050px;
   flex: 1;
   margin-bottom: 20px;
 }
