@@ -202,30 +202,7 @@ function App() {
       {/* ============================================================ */}
       {/* APPLICATION FOOTER */}
       {/* ============================================================ */}
-      <footer className="app-footer">
-        <div className="footer-content">
-          <div className="footer-section">
-            <h4>About ECHO</h4>
-            <p>
-              ECHO (Effective Conversations for Healthcare Optimization) is a
-              clinical simulation platform designed to improve healthcare
-              communication through AI-powered patient interactions.
-            </p>
-          </div>
-
-          <div className="footer-section">
-            <h4>Resources</h4>
-            <ul>
-              <li><a href="/docs">Documentation</a></li>
-              <li><a href="/accessibility">Accessibility</a></li>
-            </ul>
-          </div>
-
-          <div className="footer-section">
-            <p>&copy; 2024 ECHO Platform. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      {/* Footer removed */}
     </div>
   );
 }
