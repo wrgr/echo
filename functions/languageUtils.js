@@ -14,8 +14,22 @@ const translateToEnglish = async (text, srcLang = 'auto') => {
     return translations[text];
   }
 
+  const langCodes = {
+    english: 'en',
+    spanish: 'es',
+    french: 'fr',
+    german: 'de',
+    chinese: 'zh',
+    japanese: 'ja',
+    korean: 'ko',
+    russian: 'ru',
+    portuguese: 'pt',
+    italian: 'it',
+  };
+  const fromLang = langCodes[srcLang?.toLowerCase?.()] || srcLang;
+
   try {
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${srcLang}&tl=en&dt=t&q=${encodeURIComponent(text)}`;
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${fromLang}&tl=en&dt=t&q=${encodeURIComponent(text)}`;
     const res = await fetch(url);
     const data = await res.json();
     if (Array.isArray(data) && data[0] && data[0][0] && data[0][0][0]) {
