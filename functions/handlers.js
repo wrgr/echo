@@ -245,7 +245,7 @@ async function handleInteraction(req, res, geminiApiSecret) {
 
       providerTurnCount = 0;
 
-      if (nextPhaseConfig) {
+      if (nextPhaseConfig && nextPhase > 1) {
         if (nextPhaseConfig.coachIntro) {
           nextCoachMessage = nextPhaseConfig.coachIntro(patientState);
         } else if (nextPhaseConfig.coachPrompt) {
