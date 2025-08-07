@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 // Import existing patient data files
 import predefinedPatients from './patients/predefinedPatients.json';
+import { formatEnglishProficiency } from './utils/language';
 
 /**
  * ECHO Patient Intake Form Component
@@ -811,7 +812,7 @@ function PatientIntakeForm() {
                 <div className="patient-preview-item">
                   <span className="patient-info-label">Language</span>
                   <span>
-                    {generatedPatient.nativeLanguage} ({generatedPatient.englishProficiency} English)
+                    {generatedPatient.nativeLanguage} ({formatEnglishProficiency(generatedPatient.englishProficiency, true)})
                   </span>
                 </div>
 

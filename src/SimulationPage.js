@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import predefinedPatients from "./patients/predefinedPatients.json";
 import { ENCOUNTER_PHASES_CLIENT, PHASE_RUBRIC_DEFINITIONS } from "./utils/constants";
+import { formatEnglishProficiency } from "./utils/language";
 import { useSimulation } from "./hooks/useSimulation";
 
 /**
@@ -106,7 +107,7 @@ function SimulationPage() {
                 <p className="patient-info-detail"><span className="patient-info-label">Age:</span> {patientState.age}</p>
                 <p className="patient-info-detail"><span className="patient-info-label">Gender:</span> {patientState.genderIdentity} ({patientState.pronouns})</p>
                 <p className="patient-info-detail"><span className="patient-info-label">Native Language:</span> {patientState.nativeLanguage}</p>
-                <p className="patient-info-detail"><span className="patient-info-label">English Proficiency:</span> {patientState.englishProficiency}</p>
+                <p className="patient-info-detail"><span className="patient-info-label">English Proficiency:</span> {formatEnglishProficiency(patientState.englishProficiency)}</p>
                 <p className="patient-info-detail"><span className="patient-info-label">Cultural Background:</span> {patientState.culturalBackground}</p>
               </div>
               
@@ -494,7 +495,7 @@ function SimulationPage() {
                   </p>
                   <div className="language-proficiency">
                     <span className={`proficiency-badge ${patientState.englishProficiency.toLowerCase().replace(' ', '-')}`}>
-                      {patientState.englishProficiency} English
+                      {formatEnglishProficiency(patientState.englishProficiency, true)}
                     </span>
                   </div>
                 </div>
