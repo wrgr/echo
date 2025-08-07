@@ -36,6 +36,7 @@ const simulateBrokenEnglish = (text) =>
 const formatPatientResponse = async (rawText, proficiency, srcLang = 'auto') => {
   if (!rawText) return '';
   const translation = await translateToEnglish(rawText, srcLang);
+
   const translationAvailable =
     translation && !translation.startsWith('[translation unavailable');
 
