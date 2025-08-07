@@ -129,7 +129,7 @@ async function handleInteraction(req, res, geminiApiSecret) {
         phaseComplete = geminiRegularResponse.phaseAssessment.phaseComplete;
         justificationForCompletion = geminiRegularResponse.phaseAssessment.justificationForCompletion;
         if (from === 'patient') {
-          simulatorResponse = formatPatientResponse(
+          simulatorResponse = await formatPatientResponse(
             simulatorResponse,
             patientState.englishProficiency,
             patientState.nativeLanguage,
@@ -200,7 +200,7 @@ async function handleInteraction(req, res, geminiApiSecret) {
         phaseComplete = patientReactionData.phaseAssessment.phaseComplete;
         justificationForCompletion = patientReactionData.phaseAssessment.justificationForCompletion;
         if (from === 'patient') {
-          simulatorResponse = formatPatientResponse(
+          simulatorResponse = await formatPatientResponse(
             simulatorResponse,
             patientState.englishProficiency,
             patientState.nativeLanguage,

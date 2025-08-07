@@ -1,14 +1,30 @@
-const translateToEnglish = (text, srcLang = 'auto') => {
+const translateToEnglish = async (text, srcLang = 'auto') => {
   const translations = {
     'Tengo dolor en el estómago.': 'I have pain in my stomach.',
-    'Me duele el estómago y no puedo comer mucho.': "My stomach hurts and I can't eat much.",
+    'Me duele el estómago y no puedo comer mucho.':
+      "My stomach hurts and I can't eat much.",
     'Estoy mareado y me duele la cabeza.': "I'm dizzy and my head hurts.",
     'Hola mi nombre es Maria.': 'Hello, my name is Maria.',
     'y no puedo caminar bien': 'and I cannot walk well.',
     'Hello my name is Maria y no puedo caminar bien':
       'Hello my name is Maria and I cannot walk well.',
   };
-  return translations[text] || `[translation unavailable for: ${text}]`;
+
+  if (translations[text]) {
+    return translations[text];
+  }
+
+  try {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${srcLang}&tl=en&dt=t&q=${encodeURIComponent(text)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (Array.isArray(data) && data[0] && data[0][0] && data[0][0][0]) {
+      return data[0][0][0];
+    }
+  } catch (err) {
+    console.error('translateToEnglish: translation failed', err);
+  }
+  return `[translation unavailable for: ${text}]`;
 };
 
 const simulateBrokenEnglish = (text) =>
@@ -17,9 +33,10 @@ const simulateBrokenEnglish = (text) =>
     .map((word) => word.slice(0, 4))
     .join(' ');
 
-const formatPatientResponse = (rawText, proficiency, srcLang = 'auto') => {
+const formatPatientResponse = async (rawText, proficiency, srcLang = 'auto') => {
   if (!rawText) return '';
-  const translation = translateToEnglish(rawText, srcLang);
+  const translation = await translateToEnglish(rawText, srcLang);
+
   const translationAvailable =
     translation && !translation.startsWith('[translation unavailable');
 
