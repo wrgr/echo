@@ -2,7 +2,7 @@ export const ENCOUNTER_PHASES_CLIENT = {
   0: {
     name: "Introduction & Initial Presentation",
     maxScore: 0,
-    coachIntro: (patient) => `Welcome to ECHO! You're about to meet **${patient.name}**, a **${patient.age}**-year-old. Their main complaint is: "${patient.mainComplaint}". Your goal is to conduct a complete clinical encounter adhering to the Patient-Centered / Biopsychosocial model. Let's begin with **Phase 1: Initiation and Building the Relationship**. What is your first step?`
+    coachIntro: (patient) => `Welcome to ECHO! You're about to meet **${patient.name}**, a **${patient.age}**-year-old. Their main complaint is: "${patient.mainComplaint}". Your goal is to conduct a complete clinical encounter adhering to the Patient-Centered / Biopsychosocial model. You are in **Phase 1: Initiation & Building the Relationship**. Focus on greeting the patient, introducing yourself, establishing rapport, and clearly identifying the patient's chief complaint and agenda for the visit. What is your first step?`
   },
   1: { name: "Initiation & Building the Relationship", maxScore: 5 },
   2: { name: "Information Gathering & History Taking", maxScore: 5 },
