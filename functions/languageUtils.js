@@ -1,13 +1,26 @@
 const translateToEnglish = async (text, srcLang = 'auto') => {
   const translations = {
-    'Tengo dolor en el estómago.': 'I have pain in my stomach.',
-    'Me duele el estómago y no puedo comer mucho.':
-      "My stomach hurts and I can't eat much.",
-    'Estoy mareado y me duele la cabeza.': "I'm dizzy and my head hurts.",
-    'Hola mi nombre es Maria.': 'Hello, my name is Maria.',
-    'y no puedo caminar bien': 'and I cannot walk well.',
+    // Individual words for language detection without external requests
+    Hola: 'Hello',
+    mi: 'my',
+    nombre: 'name',
+    es: 'is',
+    y: 'and',
+    no: 'not',
+    puedo: 'can',
+    caminar: 'walk',
+    bien: 'well',
+
+    // Phrases for inline translation
+    'Hola mi nombre es Maria': 'Hello, my name is Maria',
+    'y no puedo caminar bien': 'and I cannot walk well',
     'Hello my name is Maria y no puedo caminar bien':
-      'Hello my name is Maria and I cannot walk well.',
+      'Hello my name is Maria and I cannot walk well',
+    'Buenos días': 'Good morning',
+    'Tengo dolor en el estómago': 'I have pain in my stomach',
+    'Me duele el estómago y no puedo comer mucho':
+      "My stomach hurts and I can't eat much",
+    'Estoy mareado y me duele la cabeza': "I'm dizzy and my head hurts",
   };
 
   if (translations[text]) {
@@ -46,41 +59,76 @@ const translateToEnglish = async (text, srcLang = 'auto') => {
 const formatPatientResponse = async (rawText, _proficiency, srcLang = 'auto') => {
   if (!rawText) return '';
 
-  // Split by spaces but keep them in the array for reconstruction
-  const segments = rawText.split(/(\s+)/);
+  const tokens =
+    rawText.match(/([\p{L}\p{M}]+|[^\p{L}\p{M}\s]+|\s+)/gu) || [rawText];
   const processed = [];
+  let segmentTokens = [];
+  let segmentIsNonEnglish = null;
 
-  for (const segment of segments) {
-    // If it's purely whitespace, keep as is
-    if (!segment.trim()) {
-      processed.push(segment);
-      continue;
-    }
+  const flush = async () => {
+    if (!segmentTokens.length) return;
+    const phrase = segmentTokens.join('');
+    const match = phrase.match(/^(.*?)(\s*)$/s);
+    const core = match[1];
+    const trailing = match[2];
 
-    // Separate word from attached punctuation (e.g., "Hola,")
-    const match = segment.match(/^(\p{L}+[\p{M}]*)(.*)$/u);
-    if (!match) {
-      processed.push(segment);
-      continue;
-    }
-
-    const word = match[1];
-    const punctuation = match[2] || '';
-
-    const translation = await translateToEnglish(word, srcLang);
-    const translationAvailable =
-      translation && !translation.startsWith('[translation unavailable');
-
-    if (
-      translationAvailable &&
-      translation.trim().toLowerCase() !== word.trim().toLowerCase()
-    ) {
-      processed.push(`${word} (${translation})${punctuation}`);
+    if (segmentIsNonEnglish) {
+      const translation = await translateToEnglish(core.trim(), srcLang);
+      const translationAvailable =
+        translation && !translation.startsWith('[translation unavailable');
+      if (
+        translationAvailable &&
+        translation.trim().toLowerCase() !== core.trim().toLowerCase()
+      ) {
+        processed.push(`${core} (${translation})${trailing}`);
+      } else {
+        processed.push(phrase);
+      }
     } else {
-      processed.push(word + punctuation);
+      processed.push(phrase);
     }
+
+    segmentTokens = [];
+    segmentIsNonEnglish = null;
+  };
+
+  for (const token of tokens) {
+    if (/^\s+$/.test(token)) {
+      if (segmentTokens.length) {
+        segmentTokens.push(token);
+      } else {
+        processed.push(token);
+      }
+      continue;
+    }
+
+    if (/^[\p{L}\p{M}]+$/u.test(token)) {
+      const translation = await translateToEnglish(token, srcLang);
+      const translationAvailable =
+        translation && !translation.startsWith('[translation unavailable');
+      let isNonEnglish = false;
+      if (translationAvailable) {
+        isNonEnglish =
+          translation.trim().toLowerCase() !== token.trim().toLowerCase();
+      } else {
+        isNonEnglish = segmentTokens.length ? segmentIsNonEnglish : false;
+      }
+
+      if (segmentTokens.length && segmentIsNonEnglish !== isNonEnglish) {
+        await flush();
+      }
+      if (!segmentTokens.length) {
+        segmentIsNonEnglish = isNonEnglish;
+      }
+      segmentTokens.push(token);
+      continue;
+    }
+
+    await flush();
+    processed.push(token);
   }
 
+  await flush();
   return processed.join('');
 };
 
