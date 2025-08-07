@@ -41,36 +41,47 @@ const translateToEnglish = async (text, srcLang = 'auto') => {
   return `[translation unavailable for: ${text}]`;
 };
 
-const simulateBrokenEnglish = (text) =>
-  text
-    .split(' ')
-    .map((word) => word.slice(0, 4))
-    .join(' ');
-
-const formatPatientResponse = async (rawText, proficiency, srcLang = 'auto') => {
+// Detect and translate only the non-English segments of a patient response.
+// Preserves the patient's natural expression regardless of proficiency.
+const formatPatientResponse = async (rawText, _proficiency, srcLang = 'auto') => {
   if (!rawText) return '';
-  const translation = await translateToEnglish(rawText, srcLang);
 
-  const translationAvailable =
-    translation && !translation.startsWith('[translation unavailable');
+  // Split by spaces but keep them in the array for reconstruction
+  const segments = rawText.split(/(\s+)/);
+  const processed = [];
 
-  // If any part of the response is not English and we have a translation,
-  // append the translation in parentheses.
-  if (
-    translationAvailable &&
-    translation.trim() !== rawText.trim()
-  ) {
-    return `${rawText} (${translation})`;
+  for (const segment of segments) {
+    // If it's purely whitespace, keep as is
+    if (!segment.trim()) {
+      processed.push(segment);
+      continue;
+    }
+
+    // Separate word from attached punctuation (e.g., "Hola,")
+    const match = segment.match(/^(\p{L}+[\p{M}]*)(.*)$/u);
+    if (!match) {
+      processed.push(segment);
+      continue;
+    }
+
+    const word = match[1];
+    const punctuation = match[2] || '';
+
+    const translation = await translateToEnglish(word, srcLang);
+    const translationAvailable =
+      translation && !translation.startsWith('[translation unavailable');
+
+    if (
+      translationAvailable &&
+      translation.trim().toLowerCase() !== word.trim().toLowerCase()
+    ) {
+      processed.push(`${word} (${translation})${punctuation}`);
+    } else {
+      processed.push(word + punctuation);
+    }
   }
 
-  const prof = (proficiency || '').toLowerCase();
-  if (prof === 'fluent') {
-    return translationAvailable ? translation : rawText;
-  }
-  if (prof === 'none') {
-    return `${rawText} (${translation})`;
-  }
-  return simulateBrokenEnglish(translationAvailable ? translation : rawText);
+  return processed.join('');
 };
 
 module.exports = { translateToEnglish, formatPatientResponse };
