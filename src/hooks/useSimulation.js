@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import predefinedPatients from '../patients/predefinedPatients.json';
 import { ENCOUNTER_PHASES_CLIENT, PHASE_RUBRIC_DEFINITIONS } from '../utils/constants';
 import { useUserPatients } from './useUserPatients';
@@ -6,6 +6,7 @@ import { useUserPatients } from './useUserPatients';
 export const useSimulation = () => {
   const [messages, setMessages] = useState([]);
   const [conversationHistoryForAPI, setConversationHistoryForAPI] = useState([]);
+  const conversationHistoryRef = useRef([]);
   const [patientState, setPatientState] = useState(null);
   const [inputValue, setInputValue] = useState('');
 
@@ -35,6 +36,7 @@ export const useSimulation = () => {
     setIsLoading(false);
     setMessages([]);
     setConversationHistoryForAPI([]);
+    conversationHistoryRef.current = [];
     setPatientState(null);
     setSelectedPatientIndex('');
     setShowFullPatientInfo(false);
@@ -55,6 +57,7 @@ export const useSimulation = () => {
     setPatientState(patientProfile);
     setMessages([{ text: initialCoachMessage, from: 'coach' }]);
     setConversationHistoryForAPI([]);
+    conversationHistoryRef.current = [];
     setEncounterState(initialEncounterState);
   }, []);
 
@@ -81,6 +84,7 @@ export const useSimulation = () => {
         setPatientState(patient);
         setMessages([{ text: initialCoachMessage, from: 'coach' }]);
         setConversationHistoryForAPI([]);
+        conversationHistoryRef.current = [];
         setEncounterState({
           currentPhase: 1,
           providerTurnCount: 0,
@@ -111,7 +115,7 @@ export const useSimulation = () => {
           actionType: actionType,
           latestInput: input,
           patientState: patientState,
-          conversationHistory: conversationHistoryForAPI,
+          conversationHistory: conversationHistoryRef.current,
           encounterState: encounterState,
         }),
       });
@@ -130,15 +134,27 @@ export const useSimulation = () => {
 
       if (data.injectedProviderResponse) {
         setMessages((prev) => [...prev, { text: data.injectedProviderResponse, from: 'provider' }]);
-        setConversationHistoryForAPI((prev) => [...prev, { role: 'provider', parts: [{ text: data.injectedProviderResponse }] }]);
+        setConversationHistoryForAPI((prev) => {
+          const updated = [...prev, { role: 'provider', parts: [{ text: data.injectedProviderResponse }] }];
+          conversationHistoryRef.current = updated;
+          return updated;
+        });
       }
 
       setMessages((prev) => [...prev, { text: data.simulatorResponse, from: data.from }]);
-      setConversationHistoryForAPI((prev) => [...prev, { role: data.from, parts: [{ text: data.simulatorResponse }] }]);
+      setConversationHistoryForAPI((prev) => {
+        const updated = [...prev, { role: data.from, parts: [{ text: data.simulatorResponse }] }];
+        conversationHistoryRef.current = updated;
+        return updated;
+      });
 
       if (data.nextCoachMessage && data.nextCoachMessage !== data.simulatorResponse) {
         setMessages((prev) => [...prev, { text: data.nextCoachMessage, from: 'coach' }]);
-        setConversationHistoryForAPI((prev) => [...prev, { role: 'coach', parts: [{ text: data.nextCoachMessage }] }]);
+        setConversationHistoryForAPI((prev) => {
+          const updated = [...prev, { role: 'coach', parts: [{ text: data.nextCoachMessage }] }];
+          conversationHistoryRef.current = updated;
+          return updated;
+        });
       }
 
     } catch (err) {
@@ -147,12 +163,16 @@ export const useSimulation = () => {
       setMessages((prev) => [...prev, { text: `Sorry, an error occurred with the AI backend. Check console for details.`, from: 'coach' }]);
 
       if (actionType === 'regular_interaction') {
-        setConversationHistoryForAPI((prev) => prev.slice(0, -1));
+        setConversationHistoryForAPI((prev) => {
+          const updated = prev.slice(0, -1);
+          conversationHistoryRef.current = updated;
+          return updated;
+        });
       }
     } finally {
       setIsLoading(false);
     }
-  }, [patientState, isLoading, conversationHistoryForAPI, encounterState, functionUrl]);
+  }, [patientState, isLoading, encounterState, functionUrl]);
 
   const handleSendMessage = async () => {
     if (inputValue.trim() === '' || !patientState || isLoading || encounterState.currentPhase >= Object.keys(ENCOUNTER_PHASES_CLIENT).length - 1) {
@@ -165,7 +185,9 @@ export const useSimulation = () => {
 
     const providerMessageText = inputValue;
     setMessages((prev) => [...prev, { text: providerMessageText, from: 'provider' }]);
-    setConversationHistoryForAPI((prev) => [...prev, { role: 'provider', parts: [{ text: providerMessageText }] }]);
+    const updatedHistory = [...conversationHistoryRef.current, { role: 'provider', parts: [{ text: providerMessageText }] }];
+    setConversationHistoryForAPI(updatedHistory);
+    conversationHistoryRef.current = updatedHistory;
     setInputValue('');
 
     await sendInteractionToServer('regular_interaction', providerMessageText);
