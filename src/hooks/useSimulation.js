@@ -82,7 +82,7 @@ export const useSimulation = () => {
         setMessages([{ text: initialCoachMessage, from: 'coach' }]);
         setConversationHistoryForAPI([]);
         setEncounterState({
-          currentPhase: 0,
+          currentPhase: 1,
           providerTurnCount: 0,
           phaseScores: {},
           currentCumulativeScore: 0,
@@ -181,11 +181,6 @@ export const useSimulation = () => {
   };
 
   const handleMoveToNextPhase = async () => {
-    if (encounterState.currentPhase === 0) {
-      setEncounterState(prev => ({ ...prev, currentPhase: 1 }));
-      setMessages((prev) => [...prev, {text: `COACH: You've started Phase 1: ${ENCOUNTER_PHASES_CLIENT[1].name}. ${ENCOUNTER_PHASES_CLIENT[1].coachPrompt || ''}`, from: 'coach'}]);
-      return;
-    }
     await sendInteractionToServer('move_to_next_phase', '');
   };
 
@@ -250,6 +245,13 @@ export const useSimulation = () => {
       setPatientState(patient);
       setMessages([{ text: initialCoachMessage, from: 'coach' }]);
       setSelectedPatientIndex('0');
+      setEncounterState({
+        currentPhase: 1,
+        providerTurnCount: 0,
+        phaseScores: {},
+        currentCumulativeScore: 0,
+        totalPossibleScore: 0,
+      });
     }
   }, [patientState]);
 
