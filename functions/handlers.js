@@ -9,6 +9,7 @@ const {
   getGeminiResponseForInteraction,
   generateInjectedProviderResponse,
 } = require('./gemini');
+const { formatPatientResponse } = require('./languageUtils');
 
 async function handleGeneratePatient(req, res, geminiApiSecret) {
   try {
@@ -127,6 +128,13 @@ async function handleInteraction(req, res, geminiApiSecret) {
         scoreUpdate = geminiRegularResponse.scoreUpdate;
         phaseComplete = geminiRegularResponse.phaseAssessment.phaseComplete;
         justificationForCompletion = geminiRegularResponse.phaseAssessment.justificationForCompletion;
+        if (from === 'patient') {
+          simulatorResponse = formatPatientResponse(
+            simulatorResponse,
+            patientState.englishProficiency,
+            patientState.nativeLanguage,
+          );
+        }
         updatedConversationHistory.push({ role: from, parts: [{ text: simulatorResponse }] });
         for (const category in scoreUpdate) {
           if (Object.hasOwnProperty.call(scoreUpdate, category)) {
@@ -191,6 +199,13 @@ async function handleInteraction(req, res, geminiApiSecret) {
         scoreUpdate = patientReactionData.scoreUpdate;
         phaseComplete = patientReactionData.phaseAssessment.phaseComplete;
         justificationForCompletion = patientReactionData.phaseAssessment.justificationForCompletion;
+        if (from === 'patient') {
+          simulatorResponse = formatPatientResponse(
+            simulatorResponse,
+            patientState.englishProficiency,
+            patientState.nativeLanguage,
+          );
+        }
         updatedConversationHistory.push({ role: from, parts: [{ text: simulatorResponse }] });
         for (const category in scoreUpdate) {
           if (Object.hasOwnProperty.call(scoreUpdate, category)) {
