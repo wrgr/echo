@@ -93,8 +93,8 @@ html, body {
 .app-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  overflow-y: auto;
 }
 
 /* Header Styles */
@@ -320,8 +320,8 @@ html, body {
 .simulation-main {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  overflow: hidden;
+  min-height: 100%;
+  overflow: visible;
 }
 
 .simulation-header {
@@ -974,7 +974,7 @@ html, body {
   
   .patient-card {
     max-width: none;
-    order: -1;
+    order: 1;
   }
   
   .intake-form-grid {
