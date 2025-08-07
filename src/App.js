@@ -112,7 +112,7 @@ function App() {
             <div className="title-container">
               <h1 className="title">ECHO</h1>
               <h2 className="subtitle">
-                (Effective Conversations for Healthcare Optimization)
+                Effective Conversations for Healthcare Optimization
               </h2>
             </div>
           </div>

@@ -328,7 +328,6 @@ html, body {
   background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
   color: white;
   padding: 20px 30px;
-  border-radius: 16px 16px 0 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
