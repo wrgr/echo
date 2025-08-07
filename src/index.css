@@ -412,11 +412,12 @@ html, body {
 /* Chat Interface */
 .simulation-content {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   flex: 1;
   gap: 20px;
   padding: 20px;
   overflow: visible;
+  align-items: stretch;
 }
 
 .chat-section {
@@ -424,6 +425,7 @@ html, body {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  height: 100%;
 }
 
 .modern-chat {
@@ -644,17 +646,17 @@ html, body {
 
 /* Patient Card */
 .patient-card {
-  order: -1;
+  order: 0;
   width: 100%;
-  max-width: 600px;
+  max-width: 400px;
   background: white;
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   border: 1px solid #e1e5e9;
   overflow: hidden;
   height: fit-content;
-  flex: 0 0 auto;
-  margin: 0 auto;
+  flex: 0 0 400px;
+  margin: 0;
 }
 
 .patient-card-header {
@@ -996,13 +998,18 @@ html, body {
     gap: var(--spacing-md);
     padding: var(--spacing-md);
   }
-  
+
   .patient-card {
     max-width: none;
-    order: 1;
+    order: -1;
     margin: 0;
+    flex: 0 0 auto;
   }
-  
+
+  .chat-section {
+    height: auto;
+  }
+
   .intake-form-grid {
     grid-template-columns: 1fr;
   }
