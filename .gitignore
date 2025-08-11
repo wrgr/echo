@@ -206,3 +206,19 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 /node_modules
+
+# Environment variables and local config files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+functions/.env
+functions/.env.local
+functions/.env.development.local
+functions/.env.test.local
+functions/.env.production.local
+
+# Firebase debug logs
+firebase-debug.log
+firebase-debug.*.log

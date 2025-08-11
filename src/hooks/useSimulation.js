@@ -30,7 +30,29 @@ export const useSimulation = () => {
 
   const { userPatients, refreshUserPatients } = useUserPatients();
 
-  const functionUrl = 'https://us-central1-echo-d825e.cloudfunctions.net/echoSimulator';
+const functionUrl = process.env.REACT_APP_FUNCTION_URL || 'https://us-central1-echo-d825e.cloudfunctions.net/echoSimulator';
+
+const sendMessage = async (message, conversationHistory, phase, patientInfo) => {
+  const response = await fetch(functionUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'interact_conversation',
+      actionType: 'regular_interaction',
+      latestInput: message,
+      patientState: patientInfo,
+      conversationHistory: conversationHistory,
+      encounterState: phase,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`HTTP error! status: ${response.status} - ${errorBody}`);
+  }
+
+  return response.json();
+};
 
   const resetSimulation = useCallback(() => {
     setIsLoading(false);
