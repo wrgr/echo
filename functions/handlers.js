@@ -129,11 +129,8 @@ async function handleInteraction(req, res, geminiApiSecret) {
         phaseComplete = geminiRegularResponse.phaseAssessment.phaseComplete;
         justificationForCompletion = geminiRegularResponse.phaseAssessment.justificationForCompletion;
         if (from === 'patient') {
-          simulatorResponse = await formatPatientResponse(
-            simulatorResponse,
-            patientState.englishProficiency,
-            patientState.nativeLanguage,
-          );
+          // Auto-translate patient responses when not in English
+          simulatorResponse = await formatPatientResponse(simulatorResponse);
         }
         updatedConversationHistory.push({ role: from, parts: [{ text: simulatorResponse }] });
         for (const category in scoreUpdate) {
@@ -200,11 +197,8 @@ async function handleInteraction(req, res, geminiApiSecret) {
         phaseComplete = patientReactionData.phaseAssessment.phaseComplete;
         justificationForCompletion = patientReactionData.phaseAssessment.justificationForCompletion;
         if (from === 'patient') {
-          simulatorResponse = await formatPatientResponse(
-            simulatorResponse,
-            patientState.englishProficiency,
-            patientState.nativeLanguage,
-          );
+          // Auto-translate patient responses when not in English
+          simulatorResponse = await formatPatientResponse(simulatorResponse);
         }
         updatedConversationHistory.push({ role: from, parts: [{ text: simulatorResponse }] });
         for (const category in scoreUpdate) {

@@ -8,6 +8,7 @@ ECHO is an AI-powered clinical simulation platform that helps healthcare provide
 - **Patient scenario generator** – create custom patient profiles manually or from natural-language descriptions that are expanded with Gemini.
 - **Help & advice** – ask the AI for cultural or clinical guidance during a simulation.
 - **Local patient library** – save generated patients in the browser for later use.
+- **Automatic translation** – patient responses are translated to English when needed so providers can always understand them.
 
 ## Getting Started
 
