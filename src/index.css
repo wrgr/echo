@@ -425,7 +425,7 @@ html, body {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  height: 100%;
+  align-self: flex-start;
 }
 
 .modern-chat {
@@ -435,7 +435,6 @@ html, body {
   padding: 20px;
   overflow-y: auto;
   max-height: 1050px;
-  flex: 1;
   margin-bottom: 20px;
 }
 
