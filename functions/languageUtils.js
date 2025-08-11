@@ -1,20 +1,18 @@
 /**
  * Ensures patient responses are always understandable by the provider.
- * If the response is not in English, an inline English translation is appended
- * in the form: "<original> (English: <translation>)". If translation fails, the
- * original text is returned.
+ * Detects the language of the given text and, when it isn't English,
+ * appends an inline English translation in the form:
+ * "<original> (English: <translation>)".
+ *
+ * If translation fails, the original text is returned unchanged when it
+ * appears to be English, otherwise a notice is appended to the original
+ * text indicating that translation was unavailable.
  *
  * @param {string} rawText The text returned by the simulator.
- * @param {string} [englishProficiency] Patient's English proficiency level.
- * @param {string} [nativeLanguage] Patient's native language.
  * @returns {Promise<string>} Formatted response with inline translation when needed.
  */
-const formatPatientResponse = async (rawText, englishProficiency = '', nativeLanguage = '') => {
+const formatPatientResponse = async (rawText) => {
   if (!rawText) return '';
-
-  // Only attempt translation if patient is not fluent
-  const needsTranslation = englishProficiency && englishProficiency.toLowerCase() !== 'fluent';
-  if (!needsTranslation) return rawText;
 
   try {
     const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(rawText)}`;
@@ -35,7 +33,10 @@ const formatPatientResponse = async (rawText, englishProficiency = '', nativeLan
     return `${rawText} (English: ${translation})`;
   } catch (err) {
     console.error('formatPatientResponse translation error:', err);
-    return `${rawText} (English: translation unavailable)`;
+    // Fallback heuristic: assume English if text is ASCII
+    return /^[\x00-\x7F]*$/.test(rawText)
+      ? rawText
+      : `${rawText} (English: translation unavailable)`;
   }
 };
 
