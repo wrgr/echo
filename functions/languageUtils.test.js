@@ -7,7 +7,8 @@ test('returns English text unchanged', async () => {
   assert.strictEqual(res, 'I have a headache.');
 });
 
-test('returns non-English text unchanged', async () => {
-  const res = await formatPatientResponse('Hola mi nombre es Maria.');
-  assert.strictEqual(res, 'Hola mi nombre es Maria.');
+test('adds inline translation for non-English text', async () => {
+  const res = await formatPatientResponse('Hola mi nombre es Maria.', 'None', 'Spanish');
+  assert.ok(res.startsWith('Hola mi nombre es Maria.'));
+  assert.ok(res.includes('English:'));
 });
