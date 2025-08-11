@@ -55,6 +55,13 @@ function SimulationPage() {
     downloadTranscript,
   } = useSimulation();
 
+  const formatText = (text) => {
+    if (!text) return "";
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n/g, '<br>');
+  };
+
   /**
    * Reference to chat window for auto-scrolling to latest message
    */
@@ -304,7 +311,7 @@ function SimulationPage() {
                     </span>
                   </div>
                   <div className="message-content">
-                    <p dangerouslySetInnerHTML={{__html: msg.text}}></p>
+                    <p dangerouslySetInnerHTML={{ __html: formatText(msg.text) }}></p>
                   </div>
                 </div>
               ))}
@@ -457,7 +464,7 @@ function SimulationPage() {
                     <div className="feedback-section">
                       <h3>📝 Overall Feedback</h3>
                       <div className="feedback-content">
-                        <p dangerouslySetInnerHTML={{__html: overallFeedback}}></p>
+                        <p dangerouslySetInnerHTML={{ __html: formatText(overallFeedback) }}></p>
                       </div>
                     </div>
                   )}
