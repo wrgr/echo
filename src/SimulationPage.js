@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import predefinedPatients from "./patients/predefinedPatients.json";
 import { ENCOUNTER_PHASES_CLIENT, PHASE_RUBRIC_DEFINITIONS } from "./utils/constants";
+import { formatEnglishProficiency } from "./utils/language";
 import { useSimulation } from "./hooks/useSimulation";
 
 /**
@@ -54,6 +55,13 @@ function SimulationPage() {
     downloadTranscript,
   } = useSimulation();
 
+  const formatText = (text) => {
+    if (!text) return "";
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n/g, '<br>');
+  };
+
   /**
    * Reference to chat window for auto-scrolling to latest message
    */
@@ -106,7 +114,7 @@ function SimulationPage() {
                 <p className="patient-info-detail"><span className="patient-info-label">Age:</span> {patientState.age}</p>
                 <p className="patient-info-detail"><span className="patient-info-label">Gender:</span> {patientState.genderIdentity} ({patientState.pronouns})</p>
                 <p className="patient-info-detail"><span className="patient-info-label">Native Language:</span> {patientState.nativeLanguage}</p>
-                <p className="patient-info-detail"><span className="patient-info-label">English Proficiency:</span> {patientState.englishProficiency}</p>
+                <p className="patient-info-detail"><span className="patient-info-label">English Proficiency:</span> {formatEnglishProficiency(patientState.englishProficiency)}</p>
                 <p className="patient-info-detail"><span className="patient-info-label">Cultural Background:</span> {patientState.culturalBackground}</p>
               </div>
               
@@ -303,7 +311,7 @@ function SimulationPage() {
                     </span>
                   </div>
                   <div className="message-content">
-                    <p dangerouslySetInnerHTML={{__html: msg.text}}></p>
+                    <p dangerouslySetInnerHTML={{ __html: formatText(msg.text) }}></p>
                   </div>
                 </div>
               ))}
@@ -456,7 +464,7 @@ function SimulationPage() {
                     <div className="feedback-section">
                       <h3>📝 Overall Feedback</h3>
                       <div className="feedback-content">
-                        <p dangerouslySetInnerHTML={{__html: overallFeedback}}></p>
+                        <p dangerouslySetInnerHTML={{ __html: formatText(overallFeedback) }}></p>
                       </div>
                     </div>
                   )}
@@ -494,7 +502,7 @@ function SimulationPage() {
                   </p>
                   <div className="language-proficiency">
                     <span className={`proficiency-badge ${patientState.englishProficiency.toLowerCase().replace(' ', '-')}`}>
-                      {patientState.englishProficiency} English
+                      {formatEnglishProficiency(patientState.englishProficiency, true)}
                     </span>
                   </div>
                 </div>

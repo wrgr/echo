@@ -93,8 +93,8 @@ html, body {
 .app-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  overflow-y: auto;
 }
 
 /* Header Styles */
@@ -187,7 +187,7 @@ html, body {
 /* Main Content Area */
 .main-content {
   flex: 1;
-  overflow: hidden;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
@@ -320,15 +320,14 @@ html, body {
 .simulation-main {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  overflow: hidden;
+  min-height: 100%;
+  overflow: visible;
 }
 
 .simulation-header {
   background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
   color: white;
   padding: 20px 30px;
-  border-radius: 16px 16px 0 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -413,17 +412,20 @@ html, body {
 /* Chat Interface */
 .simulation-content {
   display: flex;
+  flex-direction: row;
   flex: 1;
   gap: 20px;
   padding: 20px;
-  overflow: hidden;
+  overflow: visible;
+  align-items: stretch;
 }
 
 .chat-section {
-  flex: 2;
+  flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
+  align-self: flex-start;
 }
 
 .modern-chat {
@@ -432,7 +434,7 @@ html, body {
   border-radius: 12px;
   padding: 20px;
   overflow-y: auto;
-  flex: 1;
+  max-height: 1050px;
   margin-bottom: 20px;
 }
 
@@ -644,7 +646,8 @@ html, body {
 
 /* Patient Card */
 .patient-card {
-  flex: 1;
+  order: 0;
+  width: 100%;
   max-width: 400px;
   background: white;
   border-radius: 16px;
@@ -652,6 +655,8 @@ html, body {
   border: 1px solid #e1e5e9;
   overflow: hidden;
   height: fit-content;
+  flex: 0 0 400px;
+  margin: 0;
 }
 
 .patient-card-header {
@@ -993,12 +998,18 @@ html, body {
     gap: var(--spacing-md);
     padding: var(--spacing-md);
   }
-  
+
   .patient-card {
     max-width: none;
     order: -1;
+    margin: 0;
+    flex: 0 0 auto;
   }
-  
+
+  .chat-section {
+    height: auto;
+  }
+
   .intake-form-grid {
     grid-template-columns: 1fr;
   }
@@ -1539,18 +1550,7 @@ html, body {
   color: var(--text-color);
 }
 
-.advice-footer {
-  padding: 1rem;
-  background-color: var(--secondary-bg-color);
-  border-top: 1px solid var(--border-color);
-}
-
-.advice-disclaimer {
-  font-size: 0.9rem;
-  color: var(--muted-text-color);
-  margin: 0;
-  line-height: 1.5;
-}
+/* Footer styles removed */
 
 .follow-up-actions {
   display: flex;

@@ -9,6 +9,7 @@ const {
   getGeminiResponseForInteraction,
   generateInjectedProviderResponse,
 } = require('./gemini');
+const { formatPatientResponse } = require('./languageUtils');
 
 async function handleGeneratePatient(req, res, geminiApiSecret) {
   try {
@@ -19,7 +20,7 @@ async function handleGeneratePatient(req, res, geminiApiSecret) {
       patient: patientData,
       initialCoachMessage: ENCOUNTER_PHASES[0].coachIntro(patientData),
       initialEncounterState: {
-        currentPhase: 0,
+        currentPhase: 1, // Start at Phase 1
         providerTurnCount: 0,
         phaseScores: {},
         currentCumulativeScore: 0,
@@ -110,7 +111,7 @@ async function handleInteraction(req, res, geminiApiSecret) {
 
         providerTurnCount++;
         currentPhaseConfig = ENCOUNTER_PHASES[currentPhase];
-
+        updatedConversationHistory.push({ role: 'provider', parts: [{ text: latestInput }] });
         const geminiRegularResponse = await getGeminiResponseForInteraction(
           geminiApiSecret,
           patientState,
@@ -127,7 +128,11 @@ async function handleInteraction(req, res, geminiApiSecret) {
         scoreUpdate = geminiRegularResponse.scoreUpdate;
         phaseComplete = geminiRegularResponse.phaseAssessment.phaseComplete;
         justificationForCompletion = geminiRegularResponse.phaseAssessment.justificationForCompletion;
-
+        if (from === 'patient') {
+          // Auto-translate patient responses when not in English
+          simulatorResponse = await formatPatientResponse(simulatorResponse);
+        }
+        updatedConversationHistory.push({ role: from, parts: [{ text: simulatorResponse }] });
         for (const category in scoreUpdate) {
           if (Object.hasOwnProperty.call(scoreUpdate, category)) {
             currentCumulativeScore += scoreUpdate[category].points;
@@ -191,7 +196,11 @@ async function handleInteraction(req, res, geminiApiSecret) {
         scoreUpdate = patientReactionData.scoreUpdate;
         phaseComplete = patientReactionData.phaseAssessment.phaseComplete;
         justificationForCompletion = patientReactionData.phaseAssessment.justificationForCompletion;
-
+        if (from === 'patient') {
+          // Auto-translate patient responses when not in English
+          simulatorResponse = await formatPatientResponse(simulatorResponse);
+        }
+        updatedConversationHistory.push({ role: from, parts: [{ text: simulatorResponse }] });
         for (const category in scoreUpdate) {
           if (Object.hasOwnProperty.call(scoreUpdate, category)) {
             currentCumulativeScore += scoreUpdate[category].points;
@@ -245,7 +254,7 @@ async function handleInteraction(req, res, geminiApiSecret) {
 
       providerTurnCount = 0;
 
-      if (nextPhaseConfig) {
+      if (nextPhaseConfig && nextPhase > 1) {
         if (nextPhaseConfig.coachIntro) {
           nextCoachMessage = nextPhaseConfig.coachIntro(patientState);
         } else if (nextPhaseConfig.coachPrompt) {

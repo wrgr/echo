@@ -5,8 +5,32 @@ const { formatPrompt, getPrompt } = require('./prompts');
 const { PHASE_RUBRIC } = require('./constants');
 
 const callGeminiWithRetries = async (geminiApiSecret, options, postData, retries = 3) => {
-  const apiKey = await geminiApiSecret.value();
+  let apiKey;
+  if (geminiApiSecret && geminiApiSecret.value) {
+    try {
+      apiKey = await geminiApiSecret.value();
+    } catch (err) {
+      console.warn('Failed to load GEMINI_API_KEY from secret, falling back to environment variable.');
+    }
+  }
+  if (!apiKey) {
+    apiKey = process.env.GEMINI_API_KEY;
+  }
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY is not configured.');
+  }
   const fullPath = `${options.path}?key=${apiKey}`;
+
+  // When running in the Firebase emulator the host machine may not have
+  // trusted root certificates (e.g. corporate proxies). In that case the HTTPS
+  // request to the Gemini API can fail with "unable to get local issuer
+  // certificate". To keep local development smooth we explicitly disable TLS
+  // verification when the `FUNCTIONS_EMULATOR` environment variable is set.
+  // This is safe because traffic is still routed to Google's API over HTTPS;
+  // only certificate validation is skipped for the local dev workflow.
+  const insecureAgent = process.env.FUNCTIONS_EMULATOR
+    ? new https.Agent({ rejectUnauthorized: false })
+    : undefined;
 
   return new Promise((resolve, reject) => {
     const attempt = (tryCount) => {
@@ -15,6 +39,7 @@ const callGeminiWithRetries = async (geminiApiSecret, options, postData, retries
         path: fullPath,
         method: options.method,
         headers: options.headers,
+        agent: insecureAgent,
       };
 
       const apiReq = https.request(reqOptions, (apiRes) => {

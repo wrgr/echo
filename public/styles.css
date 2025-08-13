@@ -93,8 +93,8 @@ html, body {
 .app-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  overflow-y: auto;
 }
 
 /* Header Styles */
@@ -187,7 +187,7 @@ html, body {
 /* Main Content Area */
 .main-content {
   flex: 1;
-  overflow: hidden;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
@@ -320,15 +320,14 @@ html, body {
 .simulation-main {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  overflow: hidden;
+  min-height: 100%;
+  overflow: visible;
 }
 
 .simulation-header {
   background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
   color: white;
   padding: 20px 30px;
-  border-radius: 16px 16px 0 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -413,14 +412,15 @@ html, body {
 /* Chat Interface */
 .simulation-content {
   display: flex;
+  flex-direction: column;
   flex: 1;
   gap: 20px;
   padding: 20px;
-  overflow: hidden;
+  overflow: visible;
 }
 
+
 .chat-section {
-  flex: 2;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -432,7 +432,7 @@ html, body {
   border-radius: 12px;
   padding: 20px;
   overflow-y: auto;
-  flex: 1;
+  max-height: 1050px;
   margin-bottom: 20px;
 }
 
@@ -644,14 +644,17 @@ html, body {
 
 /* Patient Card */
 .patient-card {
-  flex: 1;
-  max-width: 400px;
+  order: -1;
+  width: 100%;
+  max-width: 600px;
   background: white;
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   border: 1px solid #e1e5e9;
   overflow: hidden;
   height: fit-content;
+  flex: 0 0 auto;
+  margin: 0 auto;
 }
 
 .patient-card-header {
@@ -974,7 +977,8 @@ html, body {
   
   .patient-card {
     max-width: none;
-    order: -1;
+    order: 1;
+    margin: 0;
   }
   
   .intake-form-grid {
@@ -1517,18 +1521,7 @@ html, body {
   color: var(--text-color);
 }
 
-.advice-footer {
-  padding: 1rem;
-  background-color: var(--secondary-bg-color);
-  border-top: 1px solid var(--border-color);
-}
-
-.advice-disclaimer {
-  font-size: 0.9rem;
-  color: var(--muted-text-color);
-  margin: 0;
-  line-height: 1.5;
-}
+/* Footer styles removed */
 
 .follow-up-actions {
   display: flex;
