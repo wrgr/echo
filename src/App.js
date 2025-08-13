@@ -1,10 +1,14 @@
 import React from "react";
 import { Routes, Route, Link } from "react-router-dom";
 
+
+
+
 // Import all ECHO application components
 import SimulationPage from "./SimulationPage";
 import HelpPage from "./HelpPage";
 import PatientIntakeForm from "./PatientIntakeForm";
+import PatientVoicePage from "./PatientVoicePage"; // Importing the PatientVoice training module
 
 /**
  * ECHO Application Root Component
@@ -68,13 +72,21 @@ function App() {
       icon: "📋"
     },
     {
+      path: "/patient-voice",
+      component: PatientVoicePage,
+      label: "For Patients",
+      description: "Train patients in communication and decision-making",
+      icon: "🗣️"
+    },
+    {
       path: "/help",
       component: HelpPage,
       label: "Help & Advice",
       description: "Get AI-powered clinical guidance",
       icon: "🎓"
-    }
-  ];
+    },
+
+ ];
 
   // ========================================================================
   // RENDER APPLICATION STRUCTURE
@@ -187,7 +199,12 @@ function App() {
             path="/" 
             element={<SimulationPage />} 
           />
-          
+          {/* Default Route - Redirect to Patient Voice */}
+          <Route 
+            path="/patient-voice" 
+            element={<PatientVoicePage />} 
+            />
+
           {/* 
           Future routes might include:
           - /analytics - Performance tracking and learning analytics
