@@ -44,6 +44,20 @@ ECHO is an AI-powered clinical simulation platform that helps healthcare provide
      ```
 
    The Cloud Function expects a `GEMINI_API_KEY` secret containing a Google Gemini API key.
+   For local development, you can create `functions/.env` with:
+
+   ```
+   GEMINI_API_KEY=your-api-key
+   ```
+
+   The React app can point to the local emulator by defining `REACT_APP_FUNCTION_URL` in a root `.env` file:
+
+   ```
+   REACT_APP_FUNCTION_URL=http://127.0.0.1:5001/echo-d825e/us-central1/echoSimulator
+   ```
+
+   When this variable is set the client will try the emulator first and fall back to the deployed
+   Cloud Function if the local call fails.
 
 ## Code Structure
 

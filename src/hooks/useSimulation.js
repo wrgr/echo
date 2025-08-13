@@ -30,7 +30,8 @@ export const useSimulation = () => {
 
   const { userPatients, refreshUserPatients } = useUserPatients();
 
-const functionUrl = process.env.REACT_APP_FUNCTION_URL || 'https://us-central1-echo-d825e.cloudfunctions.net/echoSimulator';
+const deployedFunctionUrl = 'https://us-central1-echo-d825e.cloudfunctions.net/echoSimulator';
+const localFunctionUrl = process.env.REACT_APP_FUNCTION_URL;
 
   const resetSimulation = useCallback(() => {
     setIsLoading(false);
@@ -107,7 +108,7 @@ const functionUrl = process.env.REACT_APP_FUNCTION_URL || 'https://us-central1-e
     setError(null);
 
     try {
-      const response = await fetch(functionUrl, {
+      const requestInit = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -118,7 +119,24 @@ const functionUrl = process.env.REACT_APP_FUNCTION_URL || 'https://us-central1-e
           conversationHistory: conversationHistoryRef.current,
           encounterState: encounterState,
         }),
-      });
+      };
+
+      let response;
+      try {
+        const targetUrl = localFunctionUrl || deployedFunctionUrl;
+        response = await fetch(targetUrl, requestInit);
+        if (!response.ok && localFunctionUrl) {
+          console.warn('Local function returned an error, trying deployed function...');
+          response = await fetch(deployedFunctionUrl, requestInit);
+        }
+      } catch (err) {
+        if (localFunctionUrl) {
+          console.warn('Local function unreachable, trying deployed function...');
+          response = await fetch(deployedFunctionUrl, requestInit);
+        } else {
+          throw err;
+        }
+      }
 
       if (!response.ok) {
         const errorBody = await response.text();
@@ -172,7 +190,7 @@ const functionUrl = process.env.REACT_APP_FUNCTION_URL || 'https://us-central1-e
     } finally {
       setIsLoading(false);
     }
-  }, [patientState, isLoading, encounterState, functionUrl]);
+  }, [patientState, isLoading, encounterState, localFunctionUrl]);
 
   const handleSendMessage = async () => {
     if (inputValue.trim() === '' || !patientState || isLoading || encounterState.currentPhase >= Object.keys(ENCOUNTER_PHASES_CLIENT).length - 1) {
