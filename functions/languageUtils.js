@@ -1,15 +1,12 @@
 /**
  * Ensures patient responses are always understandable by the provider.
  * Detects the language of the given text and, when it isn't English,
- * appends an inline English translation in the form:
- * "<original> (English: <translation>)".
- *
- * If translation fails, the original text is returned unchanged when it
- * appears to be English, otherwise a notice is appended to the original
- * text indicating that translation was unavailable.
+ * returns an English-only version of the message. Non-English text is never
+ * exposed to the provider. When translation fails for a non-English
+ * message, a notice is returned instead of the original text.
  *
  * @param {string} rawText The text returned by the simulator.
- * @returns {Promise<string>} Formatted response with inline translation when needed.
+ * @returns {Promise<string>} Patient response translated to English when needed.
  */
 const formatPatientResponse = async (rawText) => {
   if (!rawText) return '';
@@ -22,7 +19,7 @@ const formatPatientResponse = async (rawText) => {
     const detectedLang = data?.[2];
 
     if (!translation || typeof translation !== 'string') {
-      return `${rawText} (English: translation unavailable)`;
+      return 'English translation unavailable.';
     }
 
     // If Google thinks the text is already English, return it unchanged
@@ -30,13 +27,13 @@ const formatPatientResponse = async (rawText) => {
       return rawText;
     }
 
-    return `${rawText} (English: ${translation})`;
+    return translation;
   } catch (err) {
     console.error('formatPatientResponse translation error:', err);
     // Fallback heuristic: assume English if text is ASCII
     return /^[\x00-\x7F]*$/.test(rawText)
       ? rawText
-      : `${rawText} (English: translation unavailable)`;
+      : 'English translation unavailable.';
   }
 };
 
