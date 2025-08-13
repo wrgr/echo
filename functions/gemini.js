@@ -5,7 +5,20 @@ const { formatPrompt, getPrompt } = require('./prompts');
 const { PHASE_RUBRIC } = require('./constants');
 
 const callGeminiWithRetries = async (geminiApiSecret, options, postData, retries = 3) => {
-  const apiKey = await geminiApiSecret.value();
+  let apiKey;
+  if (geminiApiSecret && geminiApiSecret.value) {
+    try {
+      apiKey = await geminiApiSecret.value();
+    } catch (err) {
+      console.warn('Failed to load GEMINI_API_KEY from secret, falling back to environment variable.');
+    }
+  }
+  if (!apiKey) {
+    apiKey = process.env.GEMINI_API_KEY;
+  }
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY is not configured.');
+  }
   const fullPath = `${options.path}?key=${apiKey}`;
 
   return new Promise((resolve, reject) => {

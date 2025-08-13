@@ -15,9 +15,18 @@ const { getHelpAdviceFromGemini } = require('./gemini');
 admin.initializeApp();
 setGlobalOptions({ region: 'us-central1' });
 
-const geminiApiSecret = defineSecret('GEMINI_API_KEY');
+// Use Firebase Secret Manager in production but allow local .env fallback.
+let geminiApiSecret;
+if (!process.env.GEMINI_API_KEY) {
+  geminiApiSecret = defineSecret('GEMINI_API_KEY');
+}
 
-exports.echoSimulator = onRequest({ cors: true, secrets: [geminiApiSecret] }, async (req, res) => {
+const functionOptions = { cors: true };
+if (geminiApiSecret) {
+  functionOptions.secrets = [geminiApiSecret];
+}
+
+exports.echoSimulator = onRequest(functionOptions, async (req, res) => {
   if (req.method === 'OPTIONS') {
     return cors(req, res, () => res.status(204).send(''));
   }
