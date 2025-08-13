@@ -21,6 +21,17 @@ const callGeminiWithRetries = async (geminiApiSecret, options, postData, retries
   }
   const fullPath = `${options.path}?key=${apiKey}`;
 
+  // When running in the Firebase emulator the host machine may not have
+  // trusted root certificates (e.g. corporate proxies). In that case the HTTPS
+  // request to the Gemini API can fail with "unable to get local issuer
+  // certificate". To keep local development smooth we explicitly disable TLS
+  // verification when the `FUNCTIONS_EMULATOR` environment variable is set.
+  // This is safe because traffic is still routed to Google's API over HTTPS;
+  // only certificate validation is skipped for the local dev workflow.
+  const insecureAgent = process.env.FUNCTIONS_EMULATOR
+    ? new https.Agent({ rejectUnauthorized: false })
+    : undefined;
+
   return new Promise((resolve, reject) => {
     const attempt = (tryCount) => {
       const reqOptions = {
@@ -28,6 +39,7 @@ const callGeminiWithRetries = async (geminiApiSecret, options, postData, retries
         path: fullPath,
         method: options.method,
         headers: options.headers,
+        agent: insecureAgent,
       };
 
       const apiReq = https.request(reqOptions, (apiRes) => {
