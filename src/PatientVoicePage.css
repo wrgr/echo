@@ -1,0 +1,844 @@
+/* PatientVoicePage.css - Styling for patient communication training */
+/* Inherits from existing ECHO global stylesheet and extends for patient-specific UI */
+
+.patient-specialty-selection {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.patient-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.patient-header h1 {
+  font-size: 2.5rem;
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+
+.patient-subtitle {
+  font-size: 1.2rem;
+  color: #7f8c8d;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.specialty-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.specialty-card {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.specialty-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-color: #3498db;
+}
+
+.specialty-icon {
+  font-size: 3rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.specialty-card h3 {
+  font-size: 1.4rem;
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.specialty-card p {
+  color: #7f8c8d;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.specialty-scenarios {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #3498db;
+  font-weight: 600;
+}
+
+.patient-info-panel {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 2rem;
+  border-left: 4px solid #3498db;
+}
+
+.patient-info-panel h3 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  font-size: 1.3rem;
+}
+
+.patient-info-panel ul {
+  list-style: none;
+  padding: 0;
+}
+
+.patient-info-panel li {
+  padding: 0.5rem 0;
+  color: #555;
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.patient-info-panel li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: #27ae60;
+  font-weight: bold;
+}
+
+/* Scenario Selection Styles */
+.patient-scenario-selection {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.specialty-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.back-button {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-right: 1rem;
+  transition: background-color 0.3s;
+}
+
+.back-button:hover {
+  background: #5a6268;
+}
+
+.specialty-header h2 {
+  color: #2c3e50;
+  margin: 0;
+  font-size: 2rem;
+}
+
+.scenario-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 2rem;
+}
+
+.scenario-card {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  position: relative;
+}
+
+.scenario-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-color: #3498db;
+}
+
+.scenario-difficulty {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: #3498db;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.scenario-card h3 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  font-size: 1.3rem;
+}
+
+.scenario-card p {
+  color: #7f8c8d;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.scenario-objectives {
+  margin-bottom: 1.5rem;
+}
+
+.scenario-objectives strong {
+  color: #2c3e50;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.scenario-objectives ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.scenario-objectives li {
+  color: #555;
+  margin-bottom: 0.3rem;
+  font-size: 0.9rem;
+}
+
+.scenario-duration {
+  color: #3498db;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.patient-simulation-container {
+  height: 100vh;      /* fill the viewport */
+  display: flex;
+  flex-direction: column;
+  max-width: 1100px;
+  margin: 0 auto;
+  background: #f8f9fa;
+  overflow: hidden;   /* stop container scroll; chat list handles scrolling */
+}
+
+
+
+
+
+
+.simulation-header {
+  position: sticky;     /* keeps the header pinned while you scroll */
+  top: 0;               /* stick to the top of its scroll container */
+  z-index: 50;          /* stay above the chat */
+  background: #fff;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid #dee2e6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+
+
+.scenario-info h2 {
+  color: #2c3e50;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+}
+
+.scenario-info p {
+  color: #6c757d;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.phase-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.current-phase {
+  font-weight: 600;
+  color: #3498db;
+  margin-bottom: 0.5rem;
+}
+
+.communication-score {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #27ae60;
+}
+
+.end-simulation-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s;
+}
+
+.end-simulation-btn:hover {
+  background: #c82333;
+}
+
+.guidelines-panel {
+  background: #e3f2fd;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #bbdefb;
+  flex-shrink: 0;
+}
+
+.guidelines-panel h3 {
+  color: #1976d2;
+  margin: 0 0 1rem 0;
+  font-size: 1.2rem;
+}
+
+.phase-objectives {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.objective-item {
+  color: #1565c0;
+  font-size: 0.9rem;
+}
+
+.ask-me-3-plus {
+  background: white;
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #4caf50;
+}
+
+.ask-me-3-plus h4 {
+  color: #2e7d32;
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+}
+
+.question-prompts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.prompt-item {
+  background: #f1f8e9;
+  padding: 0.5rem;
+  border-radius: 4px;
+  color: #2e7d32;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+
+
+.message {
+  margin-bottom: 1.5rem;
+  max-width: 80%;
+}
+
+.patient-message {
+  margin-left: auto;
+}
+
+.provider-message {
+  margin-right: auto;
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.role-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.patient-message .role-label {
+  color: #3498db;
+}
+
+.provider-message .role-label {
+  color: #27ae60;
+}
+
+.timestamp {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.message-content {
+  padding: 1rem;
+  border-radius: 12px;
+  line-height: 1.5;
+}
+
+.patient-message .message-content {
+  background: #3498db;
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.provider-message .message-content {
+  background: #f8f9fa;
+  color: #2c3e50;
+  border: 1px solid #dee2e6;
+  border-bottom-left-radius: 4px;
+}
+
+.message-feedback {
+  display: flex;
+  align-items: center;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.feedback-score {
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  margin-right: 0.75rem;
+  min-width: 40px;
+  text-align: center;
+}
+
+.feedback-score.excellent {
+  background: #d4edda;
+  color: #155724;
+}
+
+.feedback-score.good {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.feedback-score.needs_improvement {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.feedback-score.poor {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.feedback-text {
+  color: #495057;
+  flex: 1;
+}
+
+.input-container {
+  background: white;
+  border-top: 1px solid #dee2e6;
+  padding: 1rem 2rem;
+  flex-shrink: 0;
+}
+
+.communication-tips {
+  background: #fff3cd;
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  color: #856404;
+  font-size: 0.9rem;
+  border-left: 4px solid #ffc107;
+}
+
+.message-input-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.message-input {
+  width: 100%;
+  padding: 1rem;
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 1rem;
+  resize: vertical;
+  min-height: 60px;
+  transition: border-color 0.3s;
+}
+
+.message-input:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+.message-input:disabled {
+  background: #f8f9fa;
+  cursor: not-allowed;
+}
+
+.input-controls {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.send-button {
+  background: #3498db;
+  color: white;
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s;
+}
+
+.send-button:hover:not(:disabled) {
+  background: #2980b9;
+}
+
+.send-button:disabled {
+  background: #95a5a6;
+  cursor: not-allowed;
+}
+
+.next-phase-button {
+  background: #27ae60;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s;
+}
+
+.next-phase-button:hover {
+  background: #229954;
+}
+
+/* Feedback Panel Styles */
+.feedback-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  max-width: 600px;
+  width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.feedback-panel::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.feedback-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.feedback-header h3 {
+  color: #2c3e50;
+  margin: 0;
+}
+
+.feedback-header button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #6c757d;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rubric-scores {
+  padding: 1.5rem;
+}
+
+.rubric-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.rubric-category {
+  flex: 1;
+  font-weight: 500;
+  color: #2c3e50;
+  margin-right: 1rem;
+}
+
+.score-bar {
+  flex: 2;
+  height: 8px;
+  background: #e9ecef;
+  border-radius: 4px;
+  margin-right: 1rem;
+  overflow: hidden;
+}
+
+.score-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #dc3545 0%, #ffc107 50%, #28a745 100%);
+  transition: width 0.3s ease;
+}
+
+.score-value {
+  font-weight: 700;
+  color: #2c3e50;
+  min-width: 40px;
+}
+
+.improvement-suggestions {
+  padding: 1.5rem;
+  border-top: 1px solid #dee2e6;
+}
+
+.improvement-suggestions h4 {
+  color: #2c3e50;
+  margin: 0 0 1rem 0;
+}
+
+.improvement-suggestions ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.improvement-suggestions li {
+  color: #555;
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+/* Completion Summary Styles */
+.completion-summary {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.summary-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.summary-header h2 {
+  color: #27ae60;
+  margin-bottom: 1rem;
+  font-size: 2rem;
+}
+
+.final-score {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #3498db;
+}
+
+.performance-breakdown {
+  margin-bottom: 2rem;
+}
+
+.performance-breakdown h3 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+}
+
+.performance-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.key-learnings {
+  margin-bottom: 2rem;
+}
+
+.key-learnings h3 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+}
+
+.key-learnings ul {
+  padding-left: 1.2rem;
+}
+
+.key-learnings li {
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 0.5rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.try-again-button {
+  background: #3498db;
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s;
+}
+
+.try-again-button:hover {
+  background: #2980b9;
+}
+
+.change-specialty-button {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s;
+}
+
+.change-specialty-button:hover {
+  background: #5a6268;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .patient-specialty-selection,
+  .patient-scenario-selection {
+    padding: 1rem;
+  }
+  
+  .specialty-grid,
+  .scenario-grid {
+    grid-template-columns: 1fr;
+  }
+  
+
+  
+  .input-controls {
+    flex-direction: column;
+  }
+  
+  .message {
+    max-width: 95%;
+  }
+  
+  .feedback-panel {
+    width: 95vw;
+    margin: 1rem;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+}
+
+
+
+/* Chat column expands between header and input */
+.patient-simulation-container .conversation-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0; /* critical for flex scroll areas */
+}
+
+/* Messages list gets the scroll */
+.patient-simulation-container .messages-area {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;   /* chat scrollbar */
+  overflow-x: hidden; /* no sideways scroll */
+  padding: 1rem 1.25rem;
+  background: #fff;
+
+}
+
+
+
+
+
+
+
+/* Make long words/URLs wrap instead of spilling off-screen */
+.message-content {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Keep the input stuck at bottom without overlapping text */
+.input-container {
+  position: sticky;
+  bottom: 0;
+  background: white;
+  border-top: 1px solid #dee2e6;
+  z-index: 5;
+}
+
+
+
+@media (max-width: 768px) {
+  .patient-simulation-container { max-width: 100%; }
+  .messages-area { padding: 0.75rem; }
+  .scenario-info h2 { font-size: 1.25rem; }
+  .patient-subtitle { font-size: 1rem; }
+
+  /* mobile layout for header */
+  .simulation-header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+}
+
+
+
+
+
+
+
+
