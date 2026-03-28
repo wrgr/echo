@@ -36,11 +36,13 @@ exports.echoSimulator = onRequest({ cors: true, secrets: [GEMINI_API_KEY] }, asy
       } else if (action === 'interact_conversation') {
         await handleInteraction(req, res, GEMINI_API_KEY);
       } else if (action === 'get_help_advice') {
-        const { patientInfo, providerPerception, question } = req.body;
+        const question = (req.body.question || '').trim();
+        const patientInfo = (req.body.patientInfo || '').trim();
+        const providerPerception = (req.body.providerPerception || '').trim();
         if (!question) {
           return res.status(400).send('Missing required question for help advice request.');
         }
-        await getHelpAdviceFromGemini(GEMINI_API_KEY, patientInfo || '', providerPerception || '', question)
+        await getHelpAdviceFromGemini(GEMINI_API_KEY, patientInfo, providerPerception, question)
           .then(advice => res.status(200).json({ advice }))
           .catch(error => {
             console.error('echoSimulator: Error getting help advice from Gemini:', error);

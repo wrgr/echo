@@ -4,6 +4,77 @@ const { Buffer } = require('buffer');
 const { formatPrompt, getPrompt } = require('./prompts');
 const { PHASE_RUBRIC } = require('./constants');
 
+/**
+ * Validate and clamp a score update object so every category's points
+ * fall within [0, max] as defined by PHASE_RUBRIC.  If a category is
+ * missing, malformed, or out-of-range, it is clamped and an annotation
+ * is appended to the justification so the learner (and audit trail)
+ * can see the correction.
+ */
+function validateScoreUpdate(raw) {
+  const validated = {};
+  const requiredCategories = Object.keys(PHASE_RUBRIC);
+
+  for (const cat of requiredCategories) {
+    const entry = raw && raw[cat];
+    const maxPts = PHASE_RUBRIC[cat].max;
+
+    if (!entry || typeof entry.points !== 'number') {
+      validated[cat] = {
+        points: 0,
+        justification: (entry && entry.justification)
+          ? `${entry.justification} [Score was non-numeric; defaulted to 0]`
+          : 'AI did not return a valid score for this category.',
+      };
+      continue;
+    }
+
+    let pts = Math.round(entry.points);          // enforce integer
+    let note = '';
+    if (pts < 0) { pts = 0; note = ` [Clamped from ${entry.points} to 0]`; }
+    if (pts > maxPts) { pts = maxPts; note = ` [Clamped from ${entry.points} to ${maxPts}]`; }
+
+    validated[cat] = {
+      points: pts,
+      justification: (entry.justification || 'No justification provided.') + note,
+    };
+  }
+
+  return validated;
+}
+
+/**
+ * Validate the full interaction response from Gemini.
+ * Ensures required fields exist, score is bounded, and phaseAssessment is boolean.
+ */
+function validateInteractionResponse(parsed) {
+  const safe = { ...parsed };
+
+  // Ensure from is a known value
+  if (!['patient', 'coach'].includes(safe.from)) {
+    safe.from = 'patient';
+  }
+
+  // Ensure simulatorResponse is a string
+  if (typeof safe.simulatorResponse !== 'string' || !safe.simulatorResponse.trim()) {
+    safe.simulatorResponse = '...';   // silent patient is better than crash
+  }
+
+  // Validate phaseAssessment
+  if (!safe.phaseAssessment || typeof safe.phaseAssessment !== 'object') {
+    safe.phaseAssessment = { phaseComplete: false, justificationForCompletion: 'Phase assessment missing from AI response.' };
+  }
+  safe.phaseAssessment.phaseComplete = Boolean(safe.phaseAssessment.phaseComplete);
+  if (typeof safe.phaseAssessment.justificationForCompletion !== 'string') {
+    safe.phaseAssessment.justificationForCompletion = '';
+  }
+
+  // Validate scoreUpdate via the shared helper
+  safe.scoreUpdate = validateScoreUpdate(safe.scoreUpdate);
+
+  return safe;
+}
+
 const callGeminiWithRetries = async (geminiApiSecret, options, postData, retries = 3) => {
   const apiKey = await geminiApiSecret.value();
   const fullPath = `${options.path}?key=${apiKey}`;
@@ -158,19 +229,7 @@ async function getPhaseScoreFromGemini(geminiApiSecret, patientState, conversati
     const cleanResponseText = responseText.replace(/^```json\s*|\s*```$/gs, '');
     const parsedScore = JSON.parse(cleanResponseText);
 
-    const requiredCategories = Object.keys(PHASE_RUBRIC);
-    const allCategoriesPresent = requiredCategories.every((cat) => parsedScore[cat] && typeof parsedScore[cat].points === 'number');
-
-    if (!allCategoriesPresent) {
-      console.warn('Gemini returned incomplete score structure. Filling defaults.');
-      const defaultScore = {};
-      requiredCategories.forEach((cat) => {
-        defaultScore[cat] = {points: 0, justification: 'Incomplete AI scoring response from Gemini.'};
-      });
-      return defaultScore;
-    }
-
-    return parsedScore;
+    return validateScoreUpdate(parsedScore);
   } catch (error) {
     console.error('Error getting phase score from Gemini:', error.message);
     const defaultScore = {};
@@ -260,7 +319,7 @@ async function getGeminiResponseForInteraction(
     const responseText = geminiResponse.candidates[0].content.parts[0].text;
     const cleanResponseText = responseText.replace(/^```json\s*|\s*```$/gs, '');
     const parsedResponse = JSON.parse(cleanResponseText);
-    return parsedResponse;
+    return validateInteractionResponse(parsedResponse);
   } catch (error) {
     console.error('Error getting Gemini response for interaction:', error.message);
     throw new Error('Failed to get Gemini response for interaction: ' + error.message);
@@ -306,6 +365,11 @@ async function generateInjectedProviderResponse(
     const responseText = geminiResponse.candidates[0].content.parts[0].text;
     const cleanResponseText = responseText.replace(/^```json\s*|\s*```$/gs, '');
     const parsedResponse = JSON.parse(cleanResponseText);
+    // Validate the score portion; keep the text as-is
+    parsedResponse.scoreUpdate = validateScoreUpdate(parsedResponse.scoreUpdate);
+    if (typeof parsedResponse.text !== 'string' || !parsedResponse.text.trim()) {
+      parsedResponse.text = '(The AI was unable to generate an example response.)';
+    }
     return parsedResponse;
   } catch (error) {
     console.error('Error generating injected provider response:', error.message);

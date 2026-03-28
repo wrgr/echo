@@ -772,6 +772,35 @@ html, body {
   padding-right: 40px;
 }
 
+/* Disclosure Modal Styles */
+.disclosure-modal {
+  max-width: 640px;
+}
+
+.disclosure-content {
+  line-height: 1.7;
+}
+
+.disclosure-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.disclosure-section h4 {
+  color: var(--primary-color);
+  margin-bottom: var(--spacing-sm);
+  font-size: var(--font-size-lg);
+}
+
+.disclosure-section ul {
+  padding-left: var(--spacing-xl);
+  margin-top: var(--spacing-sm);
+}
+
+.disclosure-section li {
+  margin-bottom: var(--spacing-sm);
+  line-height: 1.6;
+}
+
 /* ========================================================================== */
 /* PATIENT INTAKE FORM STYLES */
 /* ========================================================================== */
