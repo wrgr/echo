@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { safeMarkdown } from './utils/sanitize';
 
 /**
  * ECHO Help Page Component
@@ -355,7 +356,7 @@ function HelpPage() {
             <div className="advice-box">
               <div 
                 className="advice-content"
-                dangerouslySetInnerHTML={{__html: advice.replace(/\n/g, '<br>')}}
+                dangerouslySetInnerHTML={{__html: safeMarkdown(advice)}}
               />
             </div>
             

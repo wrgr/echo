@@ -73,6 +73,11 @@ const FIELD_TOOLTIPS = {
     content: "Additional health concerns the patient has that might emerge during the conversation. Many patients have multiple concerns but may not mention them initially. These could be related or unrelated to the main complaint and often surface with prompts like 'Is there anything else worrying you?'"
   },
 
+  hiddenConcern: {
+    title: "Hidden Concern / Undisclosed Worry",
+    content: "An underlying worry the patient has but will only disclose when sufficient trust and rapport have been established. This is a key pedagogical element: it tests whether the learner can create a safe enough environment for the patient to share sensitive information. Examples: fear of a serious diagnosis (cancer, HIV), domestic violence, substance use, financial barriers to treatment, immigration status concerns, or stigmatized conditions. The patient should only reveal this if the provider demonstrates genuine empathy and cultural safety."
+  },
+
   // ========== CULTURAL & COMMUNICATION ==========
   nativeLanguage: {
     title: "Native/First Language",
@@ -702,6 +707,7 @@ function PatientIntakeForm() {
               
               {renderFieldWithTooltip('mainComplaint', 'Main Complaint', 'input', 'Primary reason for visit')}
               {renderFieldWithTooltip('secondaryComplaint', 'Secondary Complaint', 'input', 'Additional concerns')}
+              {renderFieldWithTooltip('hiddenConcern', 'Hidden Concern', 'textarea', 'Underlying worry the patient may not disclose initially (e.g., fear of cancer, domestic violence, financial barriers)', 2)}
 
               {/* ========== CULTURAL & COMMUNICATION ========== */}
               <h4 className="form-section-header">Cultural & Communication Factors</h4>

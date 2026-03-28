@@ -1060,9 +1060,10 @@ html, body {
 .mt-10 { margin-top: 10px; }
 .mt-15 { margin-top: 15px; }
 .small-text { font-size: 0.8em; }
-.score-good { color: #059669; }
-.score-average { color: #d97706; }
-.score-poor { color: #dc2626; }
+.score-good { color: #38a169; }        /* Proficient (80%+) */
+.score-average { color: #3182ce; }     /* Competent (60-79%) */
+.score-developing { color: #d69e2e; }  /* Developing (40-59%) */
+.score-poor { color: #e53e3e; }        /* Novice (<40%) */
 .score-neutral { color: #64748b; }
 
 /* ========================================================================== */

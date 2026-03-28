@@ -198,9 +198,10 @@ export const useSimulation = () => {
   const getScoreClass = (score, maxScore) => {
     if (maxScore === 0) return 'score-neutral';
     const percentage = (score / maxScore) * 100;
-    if (percentage >= 80) return 'score-good';
-    if (percentage >= 60) return 'score-average';
-    return 'score-poor';
+    if (percentage >= 80) return 'score-good';       // Proficient
+    if (percentage >= 60) return 'score-average';     // Competent
+    if (percentage >= 40) return 'score-developing';  // Developing
+    return 'score-poor';                              // Novice
   };
 
   const downloadTranscript = () => {

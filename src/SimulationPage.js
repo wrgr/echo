@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from "react";
 import predefinedPatients from "./patients/predefinedPatients.json";
-import { ENCOUNTER_PHASES_CLIENT, PHASE_RUBRIC_DEFINITIONS } from "./utils/constants";
+import { ENCOUNTER_PHASES_CLIENT, PHASE_RUBRIC_DEFINITIONS, getPerformanceLevel } from "./utils/constants";
 import { useSimulation } from "./hooks/useSimulation";
+import { safeMarkdown } from "./utils/sanitize";
 
 /**
  * ECHO Simulation Page - Modern Card-Based Design
@@ -157,20 +158,45 @@ function SimulationPage() {
                   <span className="score-divider">/</span>
                   <span className="score-max">{maxPossibleScore}</span>
                 </div>
-                <div className="score-percentage">
-                  {maxPossibleScore > 0 ? Math.round((totalScore / maxPossibleScore) * 100) : 0}%
-                </div>
+                {(() => {
+                  const pct = maxPossibleScore > 0 ? Math.round((totalScore / maxPossibleScore) * 100) : 0;
+                  const level = getPerformanceLevel(pct);
+                  return (
+                    <>
+                      <div className="score-percentage">{pct}%</div>
+                      <div className="performance-level" style={{ color: level.color, fontWeight: 600, marginTop: '8px' }}>
+                        {level.label} ({level.rimeLevel})
+                      </div>
+                      <p className="performance-description" style={{ fontSize: '0.85em', color: '#718096', marginTop: '4px' }}>
+                        {level.description}
+                      </p>
+                    </>
+                  );
+                })()}
+              </div>
+              <div className="scoring-scale-legend" style={{ marginTop: '16px', padding: '12px', background: '#f7fafc', borderRadius: '8px', fontSize: '0.85em' }}>
+                <h4 style={{ marginBottom: '8px', color: '#4a5568' }}>Mini-CEX Scoring Scale</h4>
+                <div><strong>0</strong> = Not Done/Omitted &nbsp; <strong>1</strong> = Needs Improvement &nbsp; <strong>2</strong> = Meets Expectations &nbsp; <strong>3</strong> = Exceeds Expectations</div>
               </div>
             </div>
 
-            <h3 className="score-card-title">Rubric Categories</h3>
+            <h3 className="score-card-title">Rubric Categories (Mini-CEX 0-3 Scale)</h3>
             {Object.entries(PHASE_RUBRIC_DEFINITIONS).map(([key, def]) => (
               <div key={`rubric-def-modal-${key}`} className="rubric-definition">
                 <div className="rubric-header">
                   <span className="rubric-icon">{def.icon}</span>
-                  <span className="rubric-label">{def.label}</span>
+                  <span className="rubric-label">{def.label} (0-{def.max})</span>
                 </div>
                 <p className="rubric-description">{def.desc}</p>
+                {def.behavioralAnchors && (
+                  <div className="behavioral-anchors" style={{ marginTop: '8px', fontSize: '0.85em', color: '#4a5568' }}>
+                    {Object.entries(def.behavioralAnchors).map(([score, anchor]) => (
+                      <div key={score} style={{ marginBottom: '4px' }}>
+                        <strong>{score}:</strong> {anchor}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
 
@@ -303,7 +329,7 @@ function SimulationPage() {
                     </span>
                   </div>
                   <div className="message-content">
-                    <p dangerouslySetInnerHTML={{__html: msg.text}}></p>
+                    <p dangerouslySetInnerHTML={{__html: safeMarkdown(msg.text)}}></p>
                   </div>
                 </div>
               ))}
@@ -346,7 +372,7 @@ function SimulationPage() {
                     className="input-box modern-input-box" 
                     value={inputValue} 
                     onChange={(e) => setInputValue(e.target.value)} 
-                    onKeyPress={(e) => e.key === "Enter" && handleSendMessage()} 
+                    onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
                     placeholder="Type your response to the patient..." 
                     disabled={isLoading || !patientState} 
                   />
@@ -427,9 +453,21 @@ function SimulationPage() {
                         {totalScore}
                       </div>
                       <div className="score-total">out of {maxPossibleScore}</div>
-                      <div className="score-percentage">
-                        {maxPossibleScore > 0 ? Math.round((totalScore / maxPossibleScore) * 100) : 0}%
-                      </div>
+                      {(() => {
+                        const pct = maxPossibleScore > 0 ? Math.round((totalScore / maxPossibleScore) * 100) : 0;
+                        const level = getPerformanceLevel(pct);
+                        return (
+                          <>
+                            <div className="score-percentage">{pct}%</div>
+                            <div className="performance-level" style={{ color: level.color, fontWeight: 700, fontSize: '1.1em', marginTop: '8px' }}>
+                              {level.label}
+                            </div>
+                            <div style={{ fontSize: '0.8em', color: '#718096' }}>
+                              RIME Level: {level.rimeLevel}
+                            </div>
+                          </>
+                        );
+                      })()}
                     </div>
                     
                     <div className="score-breakdown">
@@ -456,7 +494,7 @@ function SimulationPage() {
                     <div className="feedback-section">
                       <h3>📝 Overall Feedback</h3>
                       <div className="feedback-content">
-                        <p dangerouslySetInnerHTML={{__html: overallFeedback}}></p>
+                        <p dangerouslySetInnerHTML={{__html: safeMarkdown(overallFeedback)}}></p>
                       </div>
                     </div>
                   )}
