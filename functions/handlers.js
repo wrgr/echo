@@ -1,6 +1,38 @@
 const { Buffer } = require('buffer');
 
 const { ENCOUNTER_PHASES, PHASE_RUBRIC } = require('./constants');
+
+/**
+ * Sanitize user-provided text before sending to AI.
+ * Strips potential prompt-injection markers, trims length,
+ * and removes control characters.
+ */
+const MAX_INPUT_LENGTH = 5000;
+function sanitizeUserInput(text) {
+  if (typeof text !== 'string') return '';
+  // Remove null bytes and most control characters (keep newlines/tabs)
+  let clean = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+  // Truncate to prevent excessively large payloads to Gemini
+  if (clean.length > MAX_INPUT_LENGTH) {
+    clean = clean.substring(0, MAX_INPUT_LENGTH);
+  }
+  return clean.trim();
+}
+
+/**
+ * Safely add validated score points to the cumulative totals.
+ * Returns updated { currentCumulativeScore, totalPossibleScore }.
+ */
+function accumulateScore(scoreUpdate, currentCumulativeScore, totalPossibleScore) {
+  for (const category in scoreUpdate) {
+    if (Object.hasOwnProperty.call(scoreUpdate, category) && PHASE_RUBRIC[category]) {
+      const pts = Math.max(0, Math.min(PHASE_RUBRIC[category].max, Math.round(scoreUpdate[category].points || 0)));
+      currentCumulativeScore += pts;
+      totalPossibleScore += PHASE_RUBRIC[category].max;
+    }
+  }
+  return { currentCumulativeScore, totalPossibleScore };
+}
 const {
   callGeminiWithRetries,
   generatePatientFromGemini,
@@ -80,7 +112,8 @@ async function handleGeneratePatientFromForm(req, res, geminiApiSecret) {
 
 async function handleInteraction(req, res, geminiApiSecret) {
   try {
-    const {actionType, patientState, conversationHistory, latestInput, encounterState} = req.body;
+    const {actionType, patientState, conversationHistory, encounterState} = req.body;
+    const latestInput = sanitizeUserInput(req.body.latestInput);
 
     if (!patientState || !conversationHistory || !encounterState) {
       return res.status(400).send('Missing required interaction data (patientState, conversationHistory, encounterState).');
@@ -128,12 +161,7 @@ async function handleInteraction(req, res, geminiApiSecret) {
         phaseComplete = geminiRegularResponse.phaseAssessment.phaseComplete;
         justificationForCompletion = geminiRegularResponse.phaseAssessment.justificationForCompletion;
 
-        for (const category in scoreUpdate) {
-          if (Object.hasOwnProperty.call(scoreUpdate, category)) {
-            currentCumulativeScore += scoreUpdate[category].points;
-            totalPossibleScore += PHASE_RUBRIC[category].max;
-          }
-        }
+        ({ currentCumulativeScore, totalPossibleScore } = accumulateScore(scoreUpdate, currentCumulativeScore, totalPossibleScore));
 
         if (!phaseComplete && currentPhaseConfig.maxTurns > 0 && providerTurnCount >= currentPhaseConfig.maxTurns) {
           phaseComplete = true;
@@ -192,12 +220,7 @@ async function handleInteraction(req, res, geminiApiSecret) {
         phaseComplete = patientReactionData.phaseAssessment.phaseComplete;
         justificationForCompletion = patientReactionData.phaseAssessment.justificationForCompletion;
 
-        for (const category in scoreUpdate) {
-          if (Object.hasOwnProperty.call(scoreUpdate, category)) {
-            currentCumulativeScore += scoreUpdate[category].points;
-            totalPossibleScore += PHASE_RUBRIC[category].max;
-          }
-        }
+        ({ currentCumulativeScore, totalPossibleScore } = accumulateScore(scoreUpdate, currentCumulativeScore, totalPossibleScore));
 
         break;
       }
@@ -233,12 +256,7 @@ async function handleInteraction(req, res, geminiApiSecret) {
 
       phaseScores = {...phaseScores, [completedPhaseName]: fullPhaseScore};
 
-      for (const category in fullPhaseScore) {
-        if (Object.hasOwnProperty.call(fullPhaseScore, category)) {
-          currentCumulativeScore += (fullPhaseScore[category]?.points || 0);
-          totalPossibleScore += (PHASE_RUBRIC[category]?.max || 0);
-        }
-      }
+      ({ currentCumulativeScore, totalPossibleScore } = accumulateScore(fullPhaseScore, currentCumulativeScore, totalPossibleScore));
 
       nextPhase = currentPhase + 1;
       const nextPhaseConfig = ENCOUNTER_PHASES[nextPhase];
@@ -291,9 +309,10 @@ async function handleInteraction(req, res, geminiApiSecret) {
 
 async function handleAiPopulateFields(req, res, geminiApiSecret) {
   try {
-    const { description, existingData } = req.body;
+    const existingData = req.body.existingData;
+    const description = sanitizeUserInput(req.body.description);
 
-    if (!description || typeof description !== 'string') {
+    if (!description) {
       return res.status(400).json({ error: 'Description is required and must be a string' });
     }
 

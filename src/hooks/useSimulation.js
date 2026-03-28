@@ -31,6 +31,8 @@ export const useSimulation = () => {
 
   const functionUrl = 'https://us-central1-echo-d825e.cloudfunctions.net/echoSimulator';
 
+  const SESSION_KEY = 'echoSessionState';
+
   const resetSimulation = useCallback(() => {
     setIsLoading(false);
     setMessages([]);
@@ -49,6 +51,7 @@ export const useSimulation = () => {
       currentCumulativeScore: 0,
       totalPossibleScore: 0,
     });
+    try { sessionStorage.removeItem(SESSION_KEY); } catch (_) { /* ignore */ }
   }, []);
 
   const loadPatient = useCallback((patientProfile, initialCoachMessage, initialEncounterState) => {
@@ -198,9 +201,10 @@ export const useSimulation = () => {
   const getScoreClass = (score, maxScore) => {
     if (maxScore === 0) return 'score-neutral';
     const percentage = (score / maxScore) * 100;
-    if (percentage >= 80) return 'score-good';
-    if (percentage >= 60) return 'score-average';
-    return 'score-poor';
+    if (percentage >= 80) return 'score-good';       // Proficient
+    if (percentage >= 60) return 'score-average';     // Competent
+    if (percentage >= 40) return 'score-developing';  // Developing
+    return 'score-poor';                              // Novice
   };
 
   const downloadTranscript = () => {
@@ -209,8 +213,14 @@ export const useSimulation = () => {
       return `[${msg.from.toUpperCase()}] ${cleanText}`;
     }).join('\n\n');
 
+    const pct = encounterState.totalPossibleScore > 0
+      ? Math.round((encounterState.currentCumulativeScore / encounterState.totalPossibleScore) * 100)
+      : 0;
+
     let scoreSummary = '\n\n--- ENCOUNTER SUMMARY ---\n';
-    scoreSummary += `Total Score: ${encounterState.currentCumulativeScore} / ${encounterState.totalPossibleScore}\n\n`;
+    scoreSummary += `Total Score: ${encounterState.currentCumulativeScore} / ${encounterState.totalPossibleScore} (${pct}%)\n`;
+    scoreSummary += `Scoring Framework: Mini-CEX Anchored Scale (0-3) | Encounter Structure: Calgary-Cambridge Guide\n`;
+    scoreSummary += `Note: Scores are AI-generated (Google Gemini) and formative — intended to guide learning, not certify competence.\n\n`;
 
     if (typeof encounterState.phaseScores === 'object' && encounterState.phaseScores !== null) {
       Object.entries(encounterState.phaseScores).forEach(([phaseName, phaseCategoryScores]) => {
@@ -243,15 +253,67 @@ export const useSimulation = () => {
     URL.revokeObjectURL(link.href);
   };
 
+  // Auto-save session state so encounters survive page refreshes
   useEffect(() => {
-    if (!patientState && predefinedPatients.length > 0) {
+    if (patientState && messages.length > 1) {
+      try {
+        const snapshot = {
+          messages,
+          conversationHistoryForAPI,
+          patientState,
+          selectedPatientIndex,
+          encounterState,
+          overallFeedback,
+          savedAt: Date.now(),
+        };
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify(snapshot));
+      } catch (_) { /* sessionStorage may be full or unavailable */ }
+    }
+  }, [messages, conversationHistoryForAPI, patientState, selectedPatientIndex, encounterState, overallFeedback]);
+
+  // On mount: try to recover a saved session, otherwise load default patient
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(SESSION_KEY);
+      if (saved) {
+        const snapshot = JSON.parse(saved);
+        // Only restore if session is less than 2 hours old
+        if (snapshot.savedAt && Date.now() - snapshot.savedAt < 2 * 60 * 60 * 1000) {
+          setMessages(snapshot.messages || []);
+          setConversationHistoryForAPI(snapshot.conversationHistoryForAPI || []);
+          setPatientState(snapshot.patientState);
+          setSelectedPatientIndex(snapshot.selectedPatientIndex || '');
+          setEncounterState(snapshot.encounterState);
+          setOverallFeedback(snapshot.overallFeedback);
+          return; // skip default patient load
+        }
+      }
+    } catch (_) { /* ignore parse errors */ }
+
+    if (predefinedPatients.length > 0) {
       const patient = predefinedPatients[0];
       const initialCoachMessage = ENCOUNTER_PHASES_CLIENT[0].coachIntro(patient);
       setPatientState(patient);
       setMessages([{ text: initialCoachMessage, from: 'coach' }]);
       setSelectedPatientIndex('0');
     }
-  }, [patientState]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Warn before leaving page during an active encounter
+  useEffect(() => {
+    const isActive = patientState && encounterState.currentPhase > 0 &&
+      encounterState.currentPhase < Object.keys(ENCOUNTER_PHASES_CLIENT).length - 1;
+
+    const handler = (e) => {
+      if (isActive) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [patientState, encounterState.currentPhase]);
 
   useEffect(() => {
     refreshUserPatients();

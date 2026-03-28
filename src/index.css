@@ -772,6 +772,35 @@ html, body {
   padding-right: 40px;
 }
 
+/* Disclosure Modal Styles */
+.disclosure-modal {
+  max-width: 640px;
+}
+
+.disclosure-content {
+  line-height: 1.7;
+}
+
+.disclosure-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.disclosure-section h4 {
+  color: var(--primary-color);
+  margin-bottom: var(--spacing-sm);
+  font-size: var(--font-size-lg);
+}
+
+.disclosure-section ul {
+  padding-left: var(--spacing-xl);
+  margin-top: var(--spacing-sm);
+}
+
+.disclosure-section li {
+  margin-bottom: var(--spacing-sm);
+  line-height: 1.6;
+}
+
 /* ========================================================================== */
 /* PATIENT INTAKE FORM STYLES */
 /* ========================================================================== */
@@ -1060,9 +1089,10 @@ html, body {
 .mt-10 { margin-top: 10px; }
 .mt-15 { margin-top: 15px; }
 .small-text { font-size: 0.8em; }
-.score-good { color: #059669; }
-.score-average { color: #d97706; }
-.score-poor { color: #dc2626; }
+.score-good { color: #38a169; }        /* Proficient (80%+) */
+.score-average { color: #3182ce; }     /* Competent (60-79%) */
+.score-developing { color: #d69e2e; }  /* Developing (40-59%) */
+.score-poor { color: #e53e3e; }        /* Novice (<40%) */
 .score-neutral { color: #64748b; }
 
 /* ========================================================================== */

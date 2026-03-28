@@ -1,7 +1,8 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import predefinedPatients from "./patients/predefinedPatients.json";
-import { ENCOUNTER_PHASES_CLIENT, PHASE_RUBRIC_DEFINITIONS } from "./utils/constants";
+import { ENCOUNTER_PHASES_CLIENT, PHASE_RUBRIC_DEFINITIONS, SCORING_SCALE, getPerformanceLevel } from "./utils/constants";
 import { useSimulation } from "./hooks/useSimulation";
+import { safeMarkdown } from "./utils/sanitize";
 
 /**
  * ECHO Simulation Page - Modern Card-Based Design
@@ -54,9 +55,10 @@ function SimulationPage() {
     downloadTranscript,
   } = useSimulation();
 
-  /**
-   * Reference to chat window for auto-scrolling to latest message
-   */
+  const [hasAcceptedDisclosure, setHasAcceptedDisclosure] = useState(
+    () => sessionStorage.getItem('echoDisclosureAccepted') === 'true'
+  );
+
   const chatWindowRef = useRef(null);
 
   // ========================================================================
@@ -88,9 +90,53 @@ function SimulationPage() {
   return (
     <div className="app-container">
       {/* ================================================================ */}
+      {/* AI DISCLOSURE & CONSENT SCREEN */}
+      {/* ================================================================ */}
+      {!hasAcceptedDisclosure && (
+        <div className="modal-overlay">
+          <div className="modal-content disclosure-modal">
+            <h2 className="modal-title">Before You Begin</h2>
+            <div className="disclosure-content">
+              <div className="disclosure-section">
+                <h4>How ECHO Works</h4>
+                <p>ECHO uses AI (Google Gemini) to simulate patient encounters for educational practice. The AI generates patient responses and evaluates your clinical communication skills.</p>
+              </div>
+              <div className="disclosure-section">
+                <h4>AI-Powered Scoring</h4>
+                <p>Your performance is scored by AI using a <strong>Mini-CEX anchored scale (0-3)</strong> across five rubric categories aligned with the Calgary-Cambridge Guide. Scores include written justifications so you can understand the reasoning behind each rating.</p>
+              </div>
+              <div className="disclosure-section">
+                <h4>Important Limitations</h4>
+                <ul>
+                  <li><strong>AI scores are formative, not summative.</strong> They are designed to guide learning, not to certify competence.</li>
+                  <li><strong>AI may exhibit scoring inconsistencies.</strong> Scores can vary between similar interactions. Use them as directional feedback, not absolute measures.</li>
+                  <li><strong>AI-generated patients are not real people.</strong> While grounded in clinical realism, they cannot capture the full complexity of actual patient encounters.</li>
+                  <li><strong>Cultural representations are simplified.</strong> AI may inadvertently reflect biases present in its training data. Approach cultural scenarios with critical thinking.</li>
+                </ul>
+              </div>
+              <div className="disclosure-section">
+                <h4>Your Data</h4>
+                <p>Conversation transcripts are sent to Google Gemini for processing but are not stored permanently. Patient scenarios you create are saved locally in your browser only. No personal health information should be entered.</p>
+              </div>
+            </div>
+            <button
+              className="submit-button"
+              onClick={() => {
+                setHasAcceptedDisclosure(true);
+                sessionStorage.setItem('echoDisclosureAccepted', 'true');
+              }}
+              style={{ marginTop: '16px', width: '100%' }}
+            >
+              I Understand — Begin Practice
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================ */}
       {/* MODAL OVERLAYS */}
       {/* ================================================================ */}
-      
+
       {/* Full Patient Information Modal */}
       {showFullPatientInfo && patientState && (
         <div className="modal-overlay">
@@ -157,20 +203,48 @@ function SimulationPage() {
                   <span className="score-divider">/</span>
                   <span className="score-max">{maxPossibleScore}</span>
                 </div>
-                <div className="score-percentage">
-                  {maxPossibleScore > 0 ? Math.round((totalScore / maxPossibleScore) * 100) : 0}%
-                </div>
+                {(() => {
+                  const pct = maxPossibleScore > 0 ? Math.round((totalScore / maxPossibleScore) * 100) : 0;
+                  const level = getPerformanceLevel(pct);
+                  return (
+                    <>
+                      <div className="score-percentage">{pct}%</div>
+                      <div className="performance-level" style={{ color: level.color, fontWeight: 600, marginTop: '8px' }}>
+                        {level.label} ({level.rimeLevel})
+                      </div>
+                      <p className="performance-description" style={{ fontSize: '0.85em', color: '#718096', marginTop: '4px' }}>
+                        {level.description}
+                      </p>
+                    </>
+                  );
+                })()}
+              </div>
+              <div className="scoring-scale-legend" style={{ marginTop: '16px', padding: '12px', background: '#f7fafc', borderRadius: '8px', fontSize: '0.85em' }}>
+                <h4 style={{ marginBottom: '8px', color: '#4a5568' }}>Mini-CEX Scoring Scale</h4>
+                <div><strong>0</strong> = Not Done/Omitted &nbsp; <strong>1</strong> = Needs Improvement &nbsp; <strong>2</strong> = Meets Expectations &nbsp; <strong>3</strong> = Exceeds Expectations</div>
+              </div>
+              <div className="ai-transparency-note" style={{ marginTop: '12px', padding: '12px', background: '#fffbeb', border: '1px solid #fbbf24', borderRadius: '8px', fontSize: '0.82em', color: '#92400e' }}>
+                <strong>About AI Scoring:</strong> Scores are generated by AI (Google Gemini) using the Mini-CEX framework with behavioral anchors. AI scoring is <em>formative</em> — intended to support learning, not certify competence. Scores may vary between similar interactions. Each score includes a written justification; if a justification seems inconsistent with the score, trust the justification and use it for self-reflection. If you see "[Clamped]" in a justification, the AI returned an out-of-range score that was automatically corrected.
               </div>
             </div>
 
-            <h3 className="score-card-title">Rubric Categories</h3>
+            <h3 className="score-card-title">Rubric Categories (Mini-CEX 0-3 Scale)</h3>
             {Object.entries(PHASE_RUBRIC_DEFINITIONS).map(([key, def]) => (
               <div key={`rubric-def-modal-${key}`} className="rubric-definition">
                 <div className="rubric-header">
                   <span className="rubric-icon">{def.icon}</span>
-                  <span className="rubric-label">{def.label}</span>
+                  <span className="rubric-label">{def.label} (0-{def.max})</span>
                 </div>
                 <p className="rubric-description">{def.desc}</p>
+                {def.behavioralAnchors && (
+                  <div className="behavioral-anchors" style={{ marginTop: '8px', fontSize: '0.85em', color: '#4a5568' }}>
+                    {Object.entries(def.behavioralAnchors).map(([score, anchor]) => (
+                      <div key={score} style={{ marginBottom: '4px' }}>
+                        <strong>{score}:</strong> {anchor}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
 
@@ -303,7 +377,7 @@ function SimulationPage() {
                     </span>
                   </div>
                   <div className="message-content">
-                    <p dangerouslySetInnerHTML={{__html: msg.text}}></p>
+                    <p dangerouslySetInnerHTML={{__html: safeMarkdown(msg.text)}}></p>
                   </div>
                 </div>
               ))}
@@ -346,7 +420,7 @@ function SimulationPage() {
                     className="input-box modern-input-box" 
                     value={inputValue} 
                     onChange={(e) => setInputValue(e.target.value)} 
-                    onKeyPress={(e) => e.key === "Enter" && handleSendMessage()} 
+                    onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
                     placeholder="Type your response to the patient..." 
                     disabled={isLoading || !patientState} 
                   />
@@ -427,9 +501,21 @@ function SimulationPage() {
                         {totalScore}
                       </div>
                       <div className="score-total">out of {maxPossibleScore}</div>
-                      <div className="score-percentage">
-                        {maxPossibleScore > 0 ? Math.round((totalScore / maxPossibleScore) * 100) : 0}%
-                      </div>
+                      {(() => {
+                        const pct = maxPossibleScore > 0 ? Math.round((totalScore / maxPossibleScore) * 100) : 0;
+                        const level = getPerformanceLevel(pct);
+                        return (
+                          <>
+                            <div className="score-percentage">{pct}%</div>
+                            <div className="performance-level" style={{ color: level.color, fontWeight: 700, fontSize: '1.1em', marginTop: '8px' }}>
+                              {level.label}
+                            </div>
+                            <div style={{ fontSize: '0.8em', color: '#718096' }}>
+                              RIME Level: {level.rimeLevel}
+                            </div>
+                          </>
+                        );
+                      })()}
                     </div>
                     
                     <div className="score-breakdown">
@@ -456,23 +542,34 @@ function SimulationPage() {
                     <div className="feedback-section">
                       <h3>📝 Overall Feedback</h3>
                       <div className="feedback-content">
-                        <p dangerouslySetInnerHTML={{__html: overallFeedback}}></p>
+                        <p dangerouslySetInnerHTML={{__html: safeMarkdown(overallFeedback)}}></p>
                       </div>
                     </div>
                   )}
                   
+                  <div className="how-to-interpret" style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '12px', padding: '20px', marginTop: '16px' }}>
+                    <h4 style={{ color: '#0369a1', marginBottom: '12px' }}>How to Interpret Your Results</h4>
+                    <ul style={{ paddingLeft: '20px', color: '#475569', lineHeight: '1.8', fontSize: '0.9em' }}>
+                      <li><strong>Read the justifications</strong> for each score — they explain exactly what you did well and what to improve, with references to specific communication techniques.</li>
+                      <li><strong>Focus on patterns</strong> across phases rather than individual turn scores. A category that consistently scores 1 across phases indicates a skill to prioritize in practice.</li>
+                      <li><strong>Scores are formative.</strong> A "Developing" rating is normal for learners building new skills. Use the feedback to set specific goals for your next encounter.</li>
+                      <li><strong>Try the same patient again</strong> after practicing suggested techniques to track your improvement over time.</li>
+                      <li><strong>AI limitations:</strong> Scoring AI may not capture every nuance of your communication. If a justification seems off, discuss it with a faculty mentor for calibration.</li>
+                    </ul>
+                  </div>
+
                   <div className="results-actions">
-                    <button 
-                      className="btn-primary download-btn" 
+                    <button
+                      className="btn-primary download-btn"
                       onClick={downloadTranscript}
                     >
-                      📥 Download Transcript
+                      Download Transcript
                     </button>
-                    <button 
-                      className="btn-secondary details-btn" 
+                    <button
+                      className="btn-secondary details-btn"
                       onClick={() => setShowScoringModal(true)}
                     >
-                      📊 View Detailed Scores
+                      View Detailed Scores
                     </button>
                   </div>
                 </div>

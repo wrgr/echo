@@ -214,15 +214,15 @@ function App() {
           </div>
 
           <div className="footer-section">
-            <h4>Resources</h4>
-            <ul>
-              <li><a href="/docs">Documentation</a></li>
-              <li><a href="/accessibility">Accessibility</a></li>
-            </ul>
+            <h4>Frameworks</h4>
+            <p style={{ fontSize: '0.85em', color: '#718096' }}>
+              Scoring: Mini-CEX (Norcini et al.) | Structure: Calgary-Cambridge Guide |
+              Communication: Kalamazoo Consensus | Cultural Humility: Tervalon &amp; Murray-Garcia
+            </p>
           </div>
 
           <div className="footer-section">
-            <p>&copy; 2024 ECHO Platform. All rights reserved.</p>
+            <p>&copy; 2025 ECHO Platform. For educational use only. Not a substitute for clinical judgment.</p>
           </div>
         </div>
       </footer>
