@@ -1,4 +1,6 @@
-import { initializeApp } from 'firebase/app';
+// src/firebase.js
+import { initializeApp }  from 'firebase/app';
+import { getFunctions }   from 'firebase/functions';
 
 // Firebase project configuration
 const firebaseConfig = {
@@ -11,8 +13,10 @@ const firebaseConfig = {
   measurementId: 'G-MVJ8YGYNE5',
 };
 
-// Initialize Firebase
+
 const app = initializeApp(firebaseConfig);
 
-export default app;
+const functions = getFunctions(app); // or getFunctions(app, 'us-central1')
 
+
+export { app, functions };
