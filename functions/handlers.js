@@ -367,7 +367,7 @@ Return ONLY the JSON object, no additional text.`;
 
     const options = {
       hostname: 'generativelanguage.googleapis.com',
-      path: '/v1beta/models/gemini-2.0-flash:generateContent',
+      path: '/v1beta/models/gemini-2.5-flash:generateContent',
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -163,7 +163,7 @@ Make this patient profile unique and different from previous generations. Ensure
 
   const options = {
     hostname: 'generativelanguage.googleapis.com',
-    path: '/v1beta/models/gemini-2.0-flash:generateContent',
+    path: '/v1beta/models/gemini-2.5-flash:generateContent',
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -214,7 +214,7 @@ async function getPhaseScoreFromGemini(geminiApiSecret, patientState, conversati
 
   const options = {
     hostname: 'generativelanguage.googleapis.com',
-    path: '/v1beta/models/gemini-2.0-flash:generateContent',
+    path: '/v1beta/models/gemini-2.5-flash:generateContent',
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -253,7 +253,7 @@ async function getOverallFeedbackFromGemini(geminiApiSecret, patientState, phase
 
   const options = {
     hostname: 'generativelanguage.googleapis.com',
-    path: '/v1beta/models/gemini-2.0-flash:generateContent',
+    path: '/v1beta/models/gemini-2.5-flash:generateContent',
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -305,7 +305,7 @@ async function getGeminiResponseForInteraction(
 
   const options = {
     hostname: 'generativelanguage.googleapis.com',
-    path: '/v1beta/models/gemini-2.0-flash:generateContent',
+    path: '/v1beta/models/gemini-2.5-flash:generateContent',
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -351,7 +351,7 @@ async function generateInjectedProviderResponse(
 
   const options = {
     hostname: 'generativelanguage.googleapis.com',
-    path: '/v1beta/models/gemini-2.0-flash:generateContent',
+    path: '/v1beta/models/gemini-2.5-flash:generateContent',
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -390,7 +390,7 @@ async function getHelpAdviceFromGemini(geminiApiSecret, patientInfo, providerPer
 
   const options = {
     hostname: 'generativelanguage.googleapis.com',
-    path: '/v1beta/models/gemini-2.0-flash:generateContent',
+    path: '/v1beta/models/gemini-2.5-flash:generateContent',
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

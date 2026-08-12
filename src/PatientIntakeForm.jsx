@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 // Import existing patient data files
 import predefinedPatients from './patients/predefinedPatients.json';
+import { getProvider } from './llm';
 
 /**
  * ECHO Patient Intake Form Component
@@ -235,11 +236,6 @@ function PatientIntakeForm() {
     familyInvolvementPreference: ''
   });
 
-  /**
-   * Firebase Cloud Function endpoint for all backend operations
-   */
-  const functionUrl = "https://us-central1-echo-d825e.cloudfunctions.net/echoSimulator";
-
   // ========================================================================
   // FORM HANDLING FUNCTIONS
   // ========================================================================
@@ -330,50 +326,20 @@ function PatientIntakeForm() {
     setSuccessMessage('');
 
     try {
-      // Send description to AI service for processing
-      const response = await fetch(functionUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: "ai_populate_fields", // Specific action for field population
-          description: aiDescription.trim(),
-          existingData: formData // Include existing form data in case user wants to augment
-        }),
+      // Populate fields via the configured provider (structured output for the
+      // direct providers guarantees a well-formed profile object).
+      const populatedFields = await getProvider().populateFields({
+        description: aiDescription.trim(),
+        existingData: formData,
       });
 
-      // Handle HTTP errors
-      if (!response.ok) {
-        const errorBody = await response.text();
-        let errorMessage = `HTTP error! status: ${response.status}`;
-        
-        // Try to extract more meaningful error message
-        try {
-          const errorJson = JSON.parse(errorBody);
-          errorMessage = errorJson.error || errorMessage;
-        } catch {
-          // If can't parse as JSON, use raw error if it's reasonably short
-          if (errorBody.length < 200) {
-            errorMessage = errorBody;
-          }
-        }
-        
-        throw new Error(errorMessage);
+      if (populatedFields) {
+        setFormData((prev) => ({ ...prev, ...populatedFields }));
+        setSuccessMessage('Fields populated successfully! Review and adjust as needed.');
+      } else {
+        throw new Error('Unexpected response from the provider.');
       }
 
-      // Process successful response
-      const data = await response.json();
-      
-      if (data.success && data.populatedFields) {
-        // Update form with AI-populated fields
-        setFormData(data.populatedFields);
-        setSuccessMessage('Fields populated successfully! Review and adjust as needed.');
-        
-        // Optionally clear the description field after successful population
-        // setAiDescription(''); // Commented out to allow iterative refinement
-      } else {
-        throw new Error(data.error || 'Unexpected response format from server');
-      }
-      
     } catch (err) {
       console.error("Error populating fields:", err);
       
@@ -410,25 +376,11 @@ function PatientIntakeForm() {
     setSuccessMessage('');
 
     try {
-      const response = await fetch(functionUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: "generate_patient_from_form",
-          formData: formData
-        }),
-      });
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        throw new Error(`HTTP error! status: ${response.status} - ${errorBody}`);
-      }
-
-      const data = await response.json();
-      setGeneratedPatient(data.patient);
-      savePatientLocally(data.patient);
+      const patient = await getProvider().generatePatientFromForm(formData);
+      setGeneratedPatient(patient);
+      savePatientLocally(patient);
       setSuccessMessage('Patient generated successfully!');
-      
+
     } catch (err) {
       console.error("Error generating patient:", err);
       setAiError(`Failed to generate patient: ${err.message}`);
@@ -448,24 +400,11 @@ function PatientIntakeForm() {
     setSuccessMessage('');
 
     try {
-      const response = await fetch(functionUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: "generate_patient" // No additional data needed for random generation
-        }),
-      });
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        throw new Error(`HTTP error! status: ${response.status} - ${errorBody}`);
-      }
-
-      const data = await response.json();
-      setGeneratedPatient(data.patient);
-      savePatientLocally(data.patient);
+      const patient = await getProvider().generatePatient();
+      setGeneratedPatient(patient);
+      savePatientLocally(patient);
       setSuccessMessage('Random patient generated successfully!');
-      
+
     } catch (err) {
       console.error("Error generating random patient:", err);
       setAiError(`Failed to generate random patient: ${err.message}`);

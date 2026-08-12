@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import predefinedPatients from '../patients/predefinedPatients.json';
 import { ENCOUNTER_PHASES_CLIENT, PHASE_RUBRIC_DEFINITIONS } from '../utils/constants';
+import { getProvider } from '../llm';
 import { useUserPatients } from './useUserPatients';
 
 export const useSimulation = () => {
@@ -28,8 +29,6 @@ export const useSimulation = () => {
   const [overallFeedback, setOverallFeedback] = useState(null);
 
   const { userPatients, refreshUserPatients } = useUserPatients();
-
-  const functionUrl = 'https://us-central1-echo-d825e.cloudfunctions.net/echoSimulator';
 
   const SESSION_KEY = 'echoSessionState';
 
@@ -106,26 +105,14 @@ export const useSimulation = () => {
     setError(null);
 
     try {
-      const response = await fetch(functionUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'interact_conversation',
-          actionType: actionType,
-          latestInput: input,
-          patientState: patientState,
-          conversationHistory: conversationHistoryForAPI,
-          encounterState: encounterState,
-        }),
+      const data = await getProvider().interact({
+        actionType: actionType,
+        latestInput: input,
+        patientState: patientState,
+        conversationHistory: conversationHistoryForAPI,
+        encounterState: encounterState,
       });
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        throw new Error(`HTTP error! status: ${response.status} - ${errorBody}`);
-      }
-
-      const data = await response.json();
-      console.log('Received data from server:', data);
+      console.log('Received data from provider:', data);
 
       setPatientState(data.patientState || patientState);
       setEncounterState(data.encounterState);
@@ -145,9 +132,9 @@ export const useSimulation = () => {
       }
 
     } catch (err) {
-      console.error('Failed to communicate with cloud function:', err);
-      setError(`Failed to communicate with the AI backend: ${err.message}. Please try again.`);
-      setMessages((prev) => [...prev, { text: `Sorry, an error occurred with the AI backend. Check console for details.`, from: 'coach' }]);
+      console.error('Failed to communicate with the AI provider:', err);
+      setError(`${err.message} (Check your provider and key in Settings.)`);
+      setMessages((prev) => [...prev, { text: `Sorry, an error occurred with the AI provider: ${err.message}`, from: 'coach' }]);
 
       if (actionType === 'regular_interaction') {
         setConversationHistoryForAPI((prev) => prev.slice(0, -1));
@@ -155,7 +142,7 @@ export const useSimulation = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [patientState, isLoading, conversationHistoryForAPI, encounterState, functionUrl]);
+  }, [patientState, isLoading, conversationHistoryForAPI, encounterState]);
 
   const handleSendMessage = async () => {
     if (inputValue.trim() === '' || !patientState || isLoading || encounterState.currentPhase >= Object.keys(ENCOUNTER_PHASES_CLIENT).length - 1) {
