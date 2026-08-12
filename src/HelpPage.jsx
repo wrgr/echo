@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { safeMarkdown } from './utils/sanitize';
+import { getProvider } from './llm';
 
 /**
  * ECHO Help Page Component
@@ -68,11 +69,6 @@ function HelpPage() {
    */
   const [error, setError] = useState(null);
 
-  /**
-   * Firebase Cloud Function endpoint (shared with other ECHO components)
-   */
-  const functionUrl = "https://us-central1-echo-d825e.cloudfunctions.net/echoSimulator";
-
   // ========================================================================
   // FORM VALIDATION HELPERS
   // ========================================================================
@@ -116,54 +112,20 @@ function HelpPage() {
     setIsLoading(true);
 
     try {
-      // Prepare the request payload
-      const requestData = {
-        action: "get_help_advice", // Specific action for the advisory system
-        patientInfo: patientInfo.trim(), // Optional patient context
-        providerPerception: providerPerception.trim(), // User's situation assessment
-        question: question.trim() // The main question needing guidance
-      };
-
-      // Send request to AI advisory service
-      const response = await fetch(functionUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestData),
+      // Route the advice request through the configured provider (Claude,
+      // Gemini, shared backend, or demo — chosen in Settings).
+      const advice = await getProvider().helpAdvice({
+        patientInfo: patientInfo.trim(),
+        providerPerception: providerPerception.trim(),
+        question: question.trim(),
       });
 
-      // Handle HTTP errors
-      if (!response.ok) {
-        const errorBody = await response.text();
-        
-        // Try to extract meaningful error message
-        let errorMessage = `HTTP error! status: ${response.status}`;
-        try {
-          const errorJson = JSON.parse(errorBody);
-          errorMessage = errorJson.error || errorMessage;
-        } catch {
-          // If can't parse JSON, use raw error if reasonably short
-          if (errorBody.length < 200) {
-            errorMessage = errorBody;
-          }
-        }
-        
-        throw new Error(errorMessage);
+      if (advice) {
+        setAdvice(advice);
+      } else {
+        throw new Error('No advice received from the provider.');
       }
 
-      // Process successful response
-      const data = await response.json();
-      
-      if (data.advice) {
-        setAdvice(data.advice);
-        
-        // Optional: Clear the form after successful submission to encourage new questions
-        // setQuestion('');
-        // setPatientInfo('');
-        // setProviderPerception('');
-      } else {
-        throw new Error(data.error || 'No advice received from the system');
-      }
-      
     } catch (err) {
       console.error("Error getting advice:", err);
       

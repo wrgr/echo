@@ -5,6 +5,9 @@ import { Routes, Route, Link } from "react-router-dom";
 import SimulationPage from "./SimulationPage";
 import HelpPage from "./HelpPage";
 import PatientIntakeForm from "./PatientIntakeForm";
+import SettingsPage from "./SettingsPage";
+import { useSettings } from "./SettingsContext";
+import { PROVIDERS } from "./llm";
 
 /**
  * ECHO Application Root Component
@@ -44,6 +47,12 @@ import PatientIntakeForm from "./PatientIntakeForm";
  */
 
 function App() {
+  // ========================================================================
+  // PROVIDER / SETTINGS STATE
+  // ========================================================================
+  const { settings, update, ready } = useSettings();
+  const providerLabel = (PROVIDERS[settings.provider] || {}).label || "Provider";
+
   // ========================================================================
   // APPLICATION CONFIGURATION
   // ========================================================================
@@ -117,16 +126,27 @@ function App() {
             </div>
           </div>
 
-          {/* Header Actions (Space for future features like user profile, settings, etc.) */}
+          {/* Header Actions — current AI provider + Settings */}
           <div className="header-actions">
-            {/* 
-            Future features could include:
-            - User profile/login
-            - Settings panel
-            - Help documentation link
-            - Theme toggle
-            - Language selection
-            */}
+            <Link
+              to="/settings"
+              className="settings-link"
+              title="Choose your AI provider and key"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                textDecoration: "none",
+                color: "inherit",
+                border: "1px solid rgba(255,255,255,0.4)",
+                borderRadius: 999,
+                padding: "4px 12px",
+                fontSize: "0.85em",
+              }}
+            >
+              <span aria-hidden="true">⚙️</span>
+              <span>{providerLabel}</span>
+            </Link>
           </div>
         </div>
       </header>
@@ -160,6 +180,34 @@ function App() {
       </nav>
 
       {/* ============================================================ */}
+      {/* SETUP BANNER — shown when the selected provider needs a key  */}
+      {/* ============================================================ */}
+      {!ready && (
+        <div
+          role="status"
+          style={{
+            background: "#fffaf0",
+            borderBottom: "1px solid #fbd38d",
+            color: "#744210",
+            padding: "10px 16px",
+            fontSize: "0.92em",
+            textAlign: "center",
+          }}
+        >
+          <strong>{providerLabel}</strong> needs an API key before you can run a real encounter.{" "}
+          <Link to="/settings" style={{ color: "#2b6cb0", fontWeight: 600 }}>Add a key in Settings</Link>
+          {" "}or{" "}
+          <button
+            type="button"
+            onClick={() => update({ provider: "demo" })}
+            style={{ background: "none", border: "none", color: "#2b6cb0", fontWeight: 600, cursor: "pointer", padding: 0, textDecoration: "underline" }}
+          >
+            try the offline demo
+          </button>.
+        </div>
+      )}
+
+      {/* ============================================================ */}
       {/* MAIN APPLICATION CONTENT AREA */}
       {/* ============================================================ */}
       <main className="main-content" role="main">
@@ -177,11 +225,17 @@ function App() {
           />
           
           {/* AI Advisory and Help System */}
-          <Route 
-            path="/help" 
-            element={<HelpPage />} 
+          <Route
+            path="/help"
+            element={<HelpPage />}
           />
-          
+
+          {/* AI Provider / BYOK Settings */}
+          <Route
+            path="/settings"
+            element={<SettingsPage />}
+          />
+
           {/* Default Route - Redirect to Simulation */}
           <Route 
             path="/" 
@@ -222,7 +276,7 @@ function App() {
           </div>
 
           <div className="footer-section">
-            <p>&copy; 2025 ECHO Platform. For educational use only. Not a substitute for clinical judgment.</p>
+            <p>&copy; 2026 ECHO Platform. For educational use only. Not a substitute for clinical judgment.</p>
           </div>
         </div>
       </footer>
